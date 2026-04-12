@@ -1,3 +1,28 @@
+## v0.8.94
+
+### Android Routing And Security Follow-Up
+
+- Fix the Android routing regression introduced by the initial localhost hardening rollout.
+- Restore correct direct routing for domain-based Android rules on the hardened TUN path without reopening localhost proxy exposure.
+- Enable Android VPN domain recovery on the hardened TUN path through safe `sniffer` augmentation for `http`, `tls`, and `quic`.
+- Translate compatible Android `bypassDomain` entries into top-priority Clash `DIRECT` rules during hardened Android VPN profile generation.
+
+### Runtime Hardening Consistency
+
+- Keep Android localhost listener hardening active not only during profile setup, but also during live runtime `updateConfig(...)` refreshes.
+- Prevent runtime config sync from reopening `mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`, `allow-lan`, or `external-controller` while Android VPN hardening is active.
+- Preserve resolved Android TUN routing semantics, including `route-address` handling and `RouteMode.bypassPrivate`, through the same shared runtime hardening path.
+
+### Regression Coverage And Release Safety
+
+- Add targeted regression coverage for the routing and security conflict that appeared after `v0.8.93`.
+- Add tests for:
+  - hardened Android runtime config closure of local listeners,
+  - Android TUN routing under `RouteMode.bypassPrivate`,
+  - platform-stable TUN resolution in CI and Android runtime,
+  - preserving explicit `sniffer` settings while still enforcing hardened domain recovery.
+- Update repository documentation to describe the final Android hardening model: runtime hardening, restored routing correctness, and anti-regression safeguards.
+
 ## v0.8.93
 
 ### Android VPN Hardening
@@ -11,12 +36,6 @@
   - `tproxy-port=0`
 - Force `external-controller=''` and keep `allow-lan=false` in hardened Android VPN mode.
 - Stop app-owned Android requests from depending on localhost mixed proxy while VPN mode is active.
-
-### Safer Android Defaults
-
-- Disable `systemProxy` by default to avoid publishing localhost proxy settings to the system.
-- Disable `allowBypass` by default to reduce accidental privacy regressions.
-- Set local inbound proxy defaults to `0` for Android-oriented safer startup behavior.
 
 ### Fingerprint Reduction
 

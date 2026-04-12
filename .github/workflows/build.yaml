@@ -189,29 +189,22 @@ jobs:
 
       - name: Generate release.md
         run: |
-          tags=($(git tag --merged HEAD --sort=-creatordate))
-          preTag=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | \
-          sed -nE 's/.*"tag_name": "([^"]+)".*/\1/p')
-          
-          [ -z "$preTag" ] && preTag=""
-          
           out="release.md"
           : > "$out"
-          
-          for i in "${!tags[@]}"; do
-            curr="${tags[i]}"
-            [[ "$curr" == "$preTag" ]] && break
-          
-            prev="${tags[i+1]}"
-            range="${prev:+$prev..}$curr"
-          
-            git log --no-merges --pretty=format:"%B" "$range" | \
-            awk '!/Update changelog/ && NF {print "- " $0 "\n"}' >> "$out"
-          done
+          version_tag="${{ github.ref_name }}"
+          awk -v tag="$version_tag" '
+            $0 == "## " tag { printing=1; next }
+            /^## / && printing { exit }
+            printing { print }
+          ' CHANGELOG.md >> "$out"
       - name: Patch release.md
         run: |
           version=$(echo "${{ github.ref_name }}" | sed 's/^v//')
-          sed "s|VERSION|$version|g" ./.github/release_template.md >> release.md
+          temp="release_with_template.md"
+          sed "s|VERSION|$version|g" ./.github/release_template.md > "$temp"
+          printf '\n' >> "$temp"
+          cat release.md >> "$temp"
+          mv "$temp" release.md
 
       - name: Generate sha256
         if: env.IS_STABLE == 'true'

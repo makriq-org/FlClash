@@ -13,7 +13,7 @@ Privacy-hardened FlClash fork with a strong focus on Android VPN safety, localho
 ## What Makes This Fork Different
 
 - Android VPN mode is hardened against localhost proxy leaks.
-- Risky Android defaults such as `systemProxy` and `allowBypass` are disabled by default.
+- Android VPN hardening is enforced at runtime, including live config refreshes after startup.
 - Android release verification is designed around GitHub Actions, not repeated manual APK installs.
 - Research and mitigation notes live in the repository itself.
 
@@ -58,6 +58,8 @@ In Android VPN mode this fork now closes client-side leak paths such as:
 - localhost-accessible external controller,
 - Android system proxy exposure,
 - stable tunnel fingerprint values.
+
+The current hardening model also restores correct domain-based routing on the hardened TUN path, so Android direct-route rules keep working without reopening the original localhost leak surface.
 
 Important: this fork reduces what the client leaks by itself. It does not claim to fully hide VPN presence from Android public APIs without root/Xposed.
 
