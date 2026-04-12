@@ -24,10 +24,42 @@ import com.follow.clash.service.modules.moduleLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.net.InetSocketAddress
+import java.security.SecureRandom
 import android.net.VpnService as SystemVpnService
 
 class VpnService : SystemVpnService(), IBaseService,
     CoroutineScope by CoroutineScope(Dispatchers.Default) {
+
+    private data class TunnelAddresses(
+        val session: String,
+        val ipv4: String,
+        val dns4: String,
+        val ipv6: String,
+        val dns6: String,
+    ) {
+        fun address(ipv6Enabled: Boolean): String {
+            return buildString {
+                append(ipv4)
+                if (ipv6Enabled) {
+                    append(",")
+                    append(ipv6)
+                }
+            }
+        }
+
+        fun dns(ipv6Enabled: Boolean, dnsHijacking: Boolean): String {
+            if (dnsHijacking) {
+                return "0.0.0.0"
+            }
+            return buildString {
+                append(dns4)
+                if (ipv6Enabled) {
+                    append(",")
+                    append(dns6)
+                }
+            }
+        }
+    }
 
     private val self: VpnService
         get() = this
@@ -73,30 +105,6 @@ class VpnService : SystemVpnService(), IBaseService,
         return uidPageNameMap[nextUid] ?: ""
     }
 
-    val VpnOptions.address
-        get(): String = buildString {
-            append(IPV4_ADDRESS)
-            if (ipv6) {
-                append(",")
-                append(IPV6_ADDRESS)
-            }
-        }
-
-    val VpnOptions.dns
-        get(): String {
-            if (dnsHijacking) {
-                return NET_ANY
-            }
-            return buildString {
-                append(DNS)
-                if (ipv6) {
-                    append(",")
-                    append(DNS6)
-                }
-            }
-        }
-
-
     override fun onLowMemory() {
         Core.forceGC()
         super.onLowMemory()
@@ -126,9 +134,31 @@ class VpnService : SystemVpnService(), IBaseService,
         return binder
     }
 
+    private fun createTunnelAddresses(): TunnelAddresses {
+        val random = SecureRandom()
+        val second = 16 + random.nextInt(16)
+        val third = random.nextInt(256)
+        val fourthBase = random.nextInt(64) * 4
+        val ipv4 = "172.$second.$third.${fourthBase + 1}/30"
+        val dns4 = "172.$second.$third.${fourthBase + 2}"
+        val h1 = random.nextInt(0x10000)
+        val h2 = random.nextInt(0x10000)
+        val h3 = random.nextInt(0x10000)
+        val h4 = random.nextInt(0x10000)
+        val prefix = "fd%04x:%04x:%04x:%04x".format(h1, h2, h3, h4)
+        return TunnelAddresses(
+            session = "VPN",
+            ipv4 = ipv4,
+            dns4 = dns4,
+            ipv6 = "$prefix::1/126",
+            dns6 = "$prefix::2",
+        )
+    }
+
     private fun handleStart(options: VpnOptions) {
+        val tunnelAddresses = createTunnelAddresses()
         val fd = with(Builder()) {
-            val cidr = IPV4_ADDRESS.toCIDR()
+            val cidr = tunnelAddresses.ipv4.toCIDR()
             addAddress(cidr.address, cidr.prefixLength)
             Log.d(
                 "addAddress", "address: ${cidr.address} prefixLength:${cidr.prefixLength}"
@@ -150,7 +180,7 @@ class VpnService : SystemVpnService(), IBaseService,
             }
             if (options.ipv6) {
                 try {
-                    val cidr = IPV6_ADDRESS.toCIDR()
+                    val cidr = tunnelAddresses.ipv6.toCIDR()
                     Log.d(
                         "addAddress6", "address: ${cidr.address} prefixLength:${cidr.prefixLength}"
                     )
@@ -182,9 +212,9 @@ class VpnService : SystemVpnService(), IBaseService,
                     addRoute(NET_ANY6, 0)
                 }
             }
-            addDnsServer(DNS)
+            addDnsServer(tunnelAddresses.dns4)
             if (options.ipv6) {
-                addDnsServer(DNS6)
+                addDnsServer(tunnelAddresses.dns6)
             }
             setMtu(9000)
             options.accessControlProps.let { accessControl ->
@@ -204,7 +234,7 @@ class VpnService : SystemVpnService(), IBaseService,
                     }
                 }
             }
-            setSession("FlClash")
+            setSession(tunnelAddresses.session)
             setBlocking(false)
             if (Build.VERSION.SDK_INT >= 29) {
                 setMetered(false)
@@ -228,8 +258,8 @@ class VpnService : SystemVpnService(), IBaseService,
             protect = this::protect,
             resolverProcess = this::resolverProcess,
             options.stack,
-            options.address,
-            options.dns
+            tunnelAddresses.address(options.ipv6),
+            tunnelAddresses.dns(options.ipv6, options.dnsHijacking)
         )
     }
 
@@ -251,10 +281,6 @@ class VpnService : SystemVpnService(), IBaseService,
     }
 
     companion object {
-        private const val IPV4_ADDRESS = "172.19.0.1/30"
-        private const val IPV6_ADDRESS = "fdfe:dcba:9876::1/126"
-        private const val DNS = "172.19.0.2"
-        private const val DNS6 = "fdfe:dcba:9876::2"
         private const val NET_ANY = "0.0.0.0"
         private const val NET_ANY6 = "::"
     }

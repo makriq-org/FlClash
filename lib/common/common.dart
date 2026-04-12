@@ -1,4 +1,5 @@
 export 'app_localizations.dart';
+export 'android_vpn_hardening.dart';
 export 'cache.dart';
 export 'color.dart';
 export 'compute.dart';

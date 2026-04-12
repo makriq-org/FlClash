@@ -5,13 +5,21 @@ import 'package:fl_clash/controller.dart';
 
 class FlClashHttpOverrides extends HttpOverrides {
   static String handleFindProxy(Uri url) {
-    if ([localhost].contains(url.host)) {
+    if ({localhost, '127.0.0.1', '::1', '[::1]'}.contains(url.host)) {
       return 'DIRECT';
     }
     final port = appController.config.patchClashConfig.mixedPort;
     final isStart = appController.isStart;
+    final vpnEnabled = appController.config.vpnProps.enable;
     commonPrint.log('find $url proxy:$isStart');
-    if (!isStart) return 'DIRECT';
+    if (!shouldUseLocalProxyForRequests(
+      isAndroid: system.isAndroid,
+      vpnEnabled: vpnEnabled,
+      isStart: isStart,
+      port: port,
+    )) {
+      return 'DIRECT';
+    }
     return 'PROXY localhost:$port';
   }
 

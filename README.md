@@ -4,124 +4,100 @@
 
 </div>
 
-## FlClash
+# FlClash Hardened
 
-[![Downloads](https://img.shields.io/github/downloads/chen08209/FlClash/total?style=flat-square&logo=github)](https://github.com/chen08209/FlClash/releases/)[![Last Version](https://img.shields.io/github/release/chen08209/FlClash/all.svg?style=flat-square)](https://github.com/chen08209/FlClash/releases/)[![License](https://img.shields.io/github/license/chen08209/FlClash?style=flat-square)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/makriq3/FlClash/total?style=flat-square&logo=github)](https://github.com/makriq3/FlClash/releases/)[![Last Version](https://img.shields.io/github/release/makriq3/FlClash/all.svg?style=flat-square)](https://github.com/makriq3/FlClash/releases/)[![License](https://img.shields.io/github/license/makriq3/FlClash?style=flat-square)](LICENSE)
 
-[![Channel](https://img.shields.io/badge/Telegram-Channel-blue?style=flat-square&logo=telegram)](https://t.me/FlClash)
+Privacy-hardened FlClash fork with a strong focus on Android VPN safety, localhost leak reduction, and release automation that is independent from upstream infrastructure.
 
-A multi-platform proxy client based on ClashMeta, simple and easy to use, open-source and ad-free.
+## What Makes This Fork Different
 
-on Desktop:
+- Android VPN mode is hardened against localhost proxy leaks.
+- Risky Android defaults such as `systemProxy` and `allowBypass` are disabled by default.
+- Android release verification is designed around GitHub Actions, not repeated manual APK installs.
+- Research and mitigation notes live in the repository itself.
+
+## Current Priorities
+
+1. Reduce app-visible Android leak surface without requiring root.
+2. Keep the repository self-contained and releasable from this fork.
+3. Build a stable base for future privacy and usability features.
+
+## Research And Security Docs
+
+- [Android VPN Hardening Research](docs/android-vpn-hardening.md)
+- [Security Policy](SECURITY.md)
+- [Roadmap](ROADMAP.md)
+- [ChangeLog](CHANGELOG.md)
+
+## Screenshots
+
+Desktop:
 <p style="text-align: center;">
     <img alt="desktop" src="snapshots/desktop.gif">
 </p>
 
-on Mobile:
+Mobile:
 <p style="text-align: center;">
     <img alt="mobile" src="snapshots/mobile.gif">
 </p>
 
-## Features
+## Highlights
 
-✈️ Multi-platform: Android, Windows, macOS and Linux
+- Multi-platform: Android, Windows, macOS, Linux
+- Flutter UI with Clash-compatible workflow
+- WebDAV sync support
+- Subscription support
+- Android VPN hardening for privacy-sensitive deployments
 
-💻 Adaptive multiple screen sizes, Multiple color themes available
+## Android Hardening Snapshot
 
-💡 Based on Material You Design, [Surfboard](https://github.com/getsurfboard/surfboard)-like UI
+In Android VPN mode this fork now closes client-side leak paths such as:
 
-☁️ Supports data sync via WebDAV
+- localhost mixed / socks / http listeners,
+- localhost-accessible external controller,
+- Android system proxy exposure,
+- stable tunnel fingerprint values.
 
-✨ Support subscription link, Dark mode
-
-## Use
-
-### Linux
-
-⚠️ Make sure to install the following dependencies before using them
-
-   ```bash
-    sudo apt-get install libayatana-appindicator3-dev
-    sudo apt-get install libkeybinder-3.0-dev
-   ```
-
-### Android
-
-Support the following actions
-
-   ```bash
-    com.follow.clash.action.START
-    
-    com.follow.clash.action.STOP
-    
-    com.follow.clash.action.TOGGLE
-   ```
-
-## Download
-
-<a href="https://chen08209.github.io/FlClash-fdroid-repo/repo?fingerprint=789D6D32668712EF7672F9E58DEEB15FBD6DCEEC5AE7A4371EA72F2AAE8A12FD"><img alt="Get it on F-Droid" src="snapshots/get-it-on-fdroid.svg" width="200px"/></a> <a href="https://github.com/chen08209/FlClash/releases"><img alt="Get it on GitHub" src="snapshots/get-it-on-github.svg" width="200px"/></a>
+Important: this fork reduces what the client leaks by itself. It does not claim to fully hide VPN presence from Android public APIs without root/Xposed.
 
 ## Build
 
 1. Update submodules
+
    ```bash
    git submodule update --init --recursive
    ```
 
-2. Install `Flutter` and `Golang` environment
+2. Install Flutter and Go
 
-3. Build Application
+3. Install Android SDK and Android NDK for Android builds
 
-    - android
+4. Build:
 
-        1. Install  `Android SDK` ,  `Android NDK`
+   ```bash
+   dart setup.dart android
+   dart setup.dart windows --arch amd64
+   dart setup.dart linux --arch amd64
+   dart setup.dart macos --arch arm64
+   ```
 
-        2. Set `ANDROID_NDK` environment variables
+## Releases
 
-        3. Run Build script
+- Branch Android artifacts: GitHub Actions `android-branch-build`
+- Stable multi-platform release: tag push `v*`
 
-           ```bash
-           dart .\setup.dart android
-           ```
+## Project Direction
 
-    - windows
+This repository is being developed as a maintained privacy-hardened fork, not just a mirror of upstream releases.
 
-        1. You need a windows client
+That means this fork will gradually build its own:
 
-        2. Install  `Gcc`，`Inno Setup`
+- Android privacy hardening policy,
+- release pipeline,
+- security documentation,
+- and feature roadmap.
 
-        3. Run build script
+## Upstream
 
-           ```bash
-           dart .\setup.dart windows --arch <arm64 | amd64>
-           ```
-
-    - linux
-
-        1. You need a linux client
-
-        2. Run build script
-
-           ```bash
-           dart .\setup.dart linux --arch <arm64 | amd64>
-           ```
-
-    - macOS
-
-        1. You need a macOS client
-
-        2. Run build script
-
-           ```bash
-           dart .\setup.dart macos --arch <arm64 | amd64>
-           ```
-
-## Star
-
-The easiest way to support developers is to click on the star (⭐) at the top of the page.
-
-<p style="text-align: center;">
-    <a href="https://api.star-history.com/svg?repos=chen08209/FlClash&Date">
-        <img alt="start" width=50% src="https://api.star-history.com/svg?repos=chen08209/FlClash&Date"/>
-    </a>
-</p>
+This repository started as a fork of [chen08209/FlClash](https://github.com/chen08209/FlClash). Upstream deserves full credit for the original project and cross-platform base.

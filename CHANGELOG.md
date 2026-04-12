@@ -1,3 +1,51 @@
+## v0.8.93
+
+### Android VPN Hardening
+
+- Add an Android-only hardening layer that rewrites generated Clash runtime config in VPN mode.
+- Force all local inbound listener ports closed in Android VPN mode:
+  - `port=0`
+  - `socks-port=0`
+  - `mixed-port=0`
+  - `redir-port=0`
+  - `tproxy-port=0`
+- Force `external-controller=''` and keep `allow-lan=false` in hardened Android VPN mode.
+- Stop app-owned Android requests from depending on localhost mixed proxy while VPN mode is active.
+
+### Safer Android Defaults
+
+- Disable `systemProxy` by default to avoid publishing localhost proxy settings to the system.
+- Disable `allowBypass` by default to reduce accidental privacy regressions.
+- Set local inbound proxy defaults to `0` for Android-oriented safer startup behavior.
+
+### Fingerprint Reduction
+
+- Randomize Android tunnel IPv4 and IPv6 addresses on each VPN start.
+- Replace the static `VpnService` session label with a neutral `VPN` label.
+
+### Verification And Release Automation
+
+- Add Android VPN hardening regression tests.
+- Add a dedicated branch Android build workflow for GitHub Actions.
+- Update the main release workflow so this fork can build and publish from its own repository context.
+- Make Android signing setup conditional on repository secrets to simplify fork maintenance.
+
+### Repository Independence
+
+- Rewrite the main README around this fork's privacy-hardening goals.
+- Add in-repository Android VPN hardening research and security documentation.
+- Update release metadata and templates so this fork no longer depends on upstream branding or infrastructure assumptions.
+
+## v0.8.92
+
+- Add sqlite store
+
+- Optimize android quick action
+
+- Optimize backup and restore
+
+- Optimize more details
+
 ## v0.8.91
 
 - Fix windows some issues
