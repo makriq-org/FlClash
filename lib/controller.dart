@@ -684,7 +684,12 @@ extension SetupControllerExt on AppController {
     final overrideDns = _ref.read(overrideDnsProvider);
     final appendSystemDns = networkVM2.a;
     final routeMode = networkVM2.b;
-    final vpnEnabled = _ref.read(vpnSettingProvider.select((state) => state.enable));
+    final bypassDomain = _ref.read(
+      networkSettingProvider.select((state) => state.bypassDomain),
+    );
+    final vpnEnabled = _ref.read(
+      vpnSettingProvider.select((state) => state.enable),
+    );
     final configMap = await coreController.getConfig(profileId);
     String? scriptContent;
     final List<Rule> addedRules = [];
@@ -693,11 +698,9 @@ extension SetupControllerExt on AppController {
     } else {
       addedRules.addAll(setupState.addedRules);
     }
-    final realPatchConfig = patchConfig.copyWith(
-      tun: patchConfig.tun.getRealTun(routeMode),
-    );
-    final hardenedPatchConfig = hardenAndroidClashConfig(
-      realPatchConfig,
+    final hardenedPatchConfig = resolveAndroidRuntimeClashConfig(
+      patchConfig,
+      routeMode: routeMode,
       isAndroid: system.isAndroid,
       vpnEnabled: vpnEnabled,
     );
@@ -705,6 +708,12 @@ extension SetupControllerExt on AppController {
     if (scriptContent?.isNotEmpty == true) {
       rawConfig = await globalState.handleEvaluate(scriptContent!, rawConfig);
     }
+    rawConfig = applyAndroidVpnProfileCompatibility(
+      rawConfig,
+      isAndroid: system.isAndroid,
+      vpnEnabled: vpnEnabled,
+      bypassDomain: bypassDomain,
+    );
     final directory = await appPath.profilesPath;
     final res = makeRealProfileTask(
       MakeRealProfileState(

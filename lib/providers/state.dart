@@ -79,20 +79,31 @@ UpdateParams updateParams(Ref ref) {
   final routeMode = ref.watch(
     networkSettingProvider.select((state) => state.routeMode),
   );
+  final vpnEnabled = ref.watch(
+    vpnSettingProvider.select((state) => state.enable),
+  );
   return ref.watch(
     patchClashConfigProvider.select(
-      (state) => UpdateParams(
-        tun: state.tun.getRealTun(routeMode),
-        allowLan: state.allowLan,
-        findProcessMode: state.findProcessMode,
-        mode: state.mode,
-        logLevel: state.logLevel,
-        ipv6: state.ipv6,
-        tcpConcurrent: state.tcpConcurrent,
-        externalController: state.externalController,
-        unifiedDelay: state.unifiedDelay,
-        mixedPort: state.mixedPort,
-      ),
+      (state) {
+        final runtimeConfig = resolveAndroidRuntimeClashConfig(
+          state,
+          routeMode: routeMode,
+          isAndroid: system.isAndroid,
+          vpnEnabled: vpnEnabled,
+        );
+        return UpdateParams(
+          tun: runtimeConfig.tun,
+          allowLan: runtimeConfig.allowLan,
+          findProcessMode: runtimeConfig.findProcessMode,
+          mode: runtimeConfig.mode,
+          logLevel: runtimeConfig.logLevel,
+          ipv6: runtimeConfig.ipv6,
+          tcpConcurrent: runtimeConfig.tcpConcurrent,
+          externalController: runtimeConfig.externalController,
+          unifiedDelay: runtimeConfig.unifiedDelay,
+          mixedPort: runtimeConfig.mixedPort,
+        );
+      },
     ),
   );
 }
@@ -603,9 +614,12 @@ SharedState sharedState(Ref ref) {
   final bypassDomain = ref.watch(
     networkSettingProvider.select((state) => state.bypassDomain),
   );
+  final routeMode = ref.watch(
+    networkSettingProvider.select((state) => state.routeMode),
+  );
   final clashConfigVM2 = ref.watch(
     patchClashConfigProvider.select(
-      (state) => VM2(state.tun.stack.name, state.mixedPort),
+      (state) => VM2(state.tun, state.mixedPort),
     ),
   );
   final vpnSetting = ref.watch(vpnSettingProvider);
@@ -614,18 +628,23 @@ SharedState sharedState(Ref ref) {
   final onlyStatisticsProxy = appSettingVM3.a;
   final crashlytics = appSettingVM3.b;
   final testUrl = appSettingVM3.c;
-  final stack = clashConfigVM2.a;
+  final tun = clashConfigVM2.a;
   final port = clashConfigVM2.b;
-  final baseVpnOptions = VpnOptions(
-    enable: vpnSetting.enable,
-    stack: stack,
-    systemProxy: vpnSetting.systemProxy,
-    port: port,
-    ipv6: vpnSetting.ipv6,
-    dnsHijacking: vpnSetting.dnsHijacking,
-    accessControlProps: vpnSetting.accessControlProps,
-    allowBypass: vpnSetting.allowBypass,
-    bypassDomain: bypassDomain,
+  final baseVpnOptions = applyResolvedTunToVpnOptions(
+    VpnOptions(
+      enable: vpnSetting.enable,
+      stack: tun.stack.name,
+      systemProxy: vpnSetting.systemProxy,
+      port: port,
+      ipv6: vpnSetting.ipv6,
+      dnsHijacking: vpnSetting.dnsHijacking,
+      accessControlProps: vpnSetting.accessControlProps,
+      allowBypass: vpnSetting.allowBypass,
+      bypassDomain: bypassDomain,
+    ),
+    tun: tun,
+    routeMode: routeMode,
+    isDesktop: system.isDesktop,
   );
   return SharedState(
     currentProfileName: currentProfileName,
