@@ -616,6 +616,17 @@ SharedState sharedState(Ref ref) {
   final testUrl = appSettingVM3.c;
   final stack = clashConfigVM2.a;
   final port = clashConfigVM2.b;
+  final baseVpnOptions = VpnOptions(
+    enable: vpnSetting.enable,
+    stack: stack,
+    systemProxy: vpnSetting.systemProxy,
+    port: port,
+    ipv6: vpnSetting.ipv6,
+    dnsHijacking: vpnSetting.dnsHijacking,
+    accessControlProps: vpnSetting.accessControlProps,
+    allowBypass: vpnSetting.allowBypass,
+    bypassDomain: bypassDomain,
+  );
   return SharedState(
     currentProfileName: currentProfileName,
     onlyStatisticsProxy: onlyStatisticsProxy,
@@ -624,16 +635,9 @@ SharedState sharedState(Ref ref) {
     stopTip: appLocalizations.stopVpn,
     startTip: appLocalizations.startVpn,
     setupParams: SetupParams(selectedMap: selectedMap, testUrl: testUrl),
-    vpnOptions: VpnOptions(
-      enable: vpnSetting.enable,
-      stack: stack,
-      systemProxy: vpnSetting.systemProxy,
-      port: port,
-      ipv6: vpnSetting.ipv6,
-      dnsHijacking: vpnSetting.dnsHijacking,
-      accessControlProps: vpnSetting.accessControlProps,
-      allowBypass: vpnSetting.allowBypass,
-      bypassDomain: bypassDomain,
+    vpnOptions: hardenAndroidVpnOptions(
+      baseVpnOptions,
+      isAndroid: system.isAndroid,
     ),
   );
 }

@@ -1,4 +1,5 @@
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -26,6 +27,9 @@ class WindowSetting extends _$WindowSetting with AutoDisposeNotifierMixin {
 class VpnSetting extends _$VpnSetting with AutoDisposeNotifierMixin {
   @override
   VpnProps build() {
+    if (system.isAndroid) {
+      return const VpnProps(systemProxy: false, allowBypass: false);
+    }
     return VpnProps();
   }
 }
@@ -34,6 +38,9 @@ class VpnSetting extends _$VpnSetting with AutoDisposeNotifierMixin {
 class NetworkSetting extends _$NetworkSetting with AutoDisposeNotifierMixin {
   @override
   NetworkProps build() {
+    if (system.isAndroid) {
+      return const NetworkProps(systemProxy: false);
+    }
     return NetworkProps();
   }
 }
@@ -93,6 +100,16 @@ class PatchClashConfig extends _$PatchClashConfig
     with AutoDisposeNotifierMixin {
   @override
   ClashConfig build() {
+    if (system.isAndroid) {
+      return const ClashConfig(
+        port: 0,
+        socksPort: 0,
+        mixedPort: 0,
+        redirPort: 0,
+        tproxyPort: 0,
+        externalController: ExternalControllerStatus.close,
+      );
+    }
     return ClashConfig();
   }
 }

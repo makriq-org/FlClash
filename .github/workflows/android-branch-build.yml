@@ -1,0 +1,60 @@
+name: android-branch-build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'codex/**'
+      - 'feature/**'
+      - 'fix/**'
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.0'
+          cache-dependency-path: |
+            core/go.sum
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.35.7
+          cache: true
+
+      - name: Detect Android NDK
+        run: |
+          latest_ndk="$(find "${ANDROID_HOME}/ndk" -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)"
+          if [ -z "${latest_ndk}" ]; then
+            echo "ANDROID_NDK not found under ${ANDROID_HOME}/ndk" >&2
+            exit 1
+          fi
+          echo "ANDROID_NDK=${latest_ndk}" >> "${GITHUB_ENV}"
+
+      - name: Get Flutter Dependency
+        run: |
+          flutter --version
+          flutter pub get
+
+      - name: Run Hardening Tests
+        run: flutter test test/common/android_vpn_hardening_test.dart
+
+      - name: Build Android Artifacts
+        run: dart setup.dart android
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-dist
+          path: ./dist
+          overwrite: true
