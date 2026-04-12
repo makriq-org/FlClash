@@ -404,6 +404,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "global": MessageLookupByLibrary.simpleMessage("Глобальный"),
     "go": MessageLookupByLibrary.simpleMessage("Перейти"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "Скачать и установить",
+    ),
     "goDownload": MessageLookupByLibrary.simpleMessage("Перейти к загрузке"),
     "goToConfigureScript": MessageLookupByLibrary.simpleMessage(
       "Перейти к настройке скрипта",
@@ -877,6 +880,36 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "unnamed": MessageLookupByLibrary.simpleMessage("Без имени"),
     "update": MessageLookupByLibrary.simpleMessage("Обновить"),
+    "updateChecksumMismatch": MessageLookupByLibrary.simpleMessage(
+      "Загруженный пакет не прошел проверку SHA-256",
+    ),
+    "updateChecksumUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Не удалось проверить контрольную сумму пакета обновления",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "Скачивание обновления",
+    ),
+    "updateFailed": MessageLookupByLibrary.simpleMessage(
+      "Обновление не удалось",
+    ),
+    "updateInstallerError": MessageLookupByLibrary.simpleMessage(
+      "Не удалось открыть установщик Android",
+    ),
+    "updateInstallerOpened": MessageLookupByLibrary.simpleMessage(
+      "Установщик открыт. Подтвердите обновление в Android.",
+    ),
+    "updateNoCompatiblePackage": MessageLookupByLibrary.simpleMessage(
+      "Для этого устройства не найден совместимый Android-пакет",
+    ),
+    "updateOpeningInstaller": MessageLookupByLibrary.simpleMessage(
+      "Открытие установщика",
+    ),
+    "updatePreparing": MessageLookupByLibrary.simpleMessage(
+      "Подготовка обновления",
+    ),
+    "updateVerifying": MessageLookupByLibrary.simpleMessage(
+      "Проверка пакета",
+    ),
     "upload": MessageLookupByLibrary.simpleMessage("Загрузка"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage(

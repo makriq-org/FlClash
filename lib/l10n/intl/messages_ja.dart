@@ -294,6 +294,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "getOriginRules": MessageLookupByLibrary.simpleMessage("元のルールを取得"),
     "global": MessageLookupByLibrary.simpleMessage("グローバル"),
     "go": MessageLookupByLibrary.simpleMessage("移動"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "ダウンロードしてインストール",
+    ),
     "goDownload": MessageLookupByLibrary.simpleMessage("ダウンロードへ"),
     "goToConfigureScript": MessageLookupByLibrary.simpleMessage("スクリプト設定に移動"),
     "hasCacheChange": MessageLookupByLibrary.simpleMessage("変更をキャッシュしますか？"),
@@ -637,6 +640,32 @@ class MessageLookup extends MessageLookupByLibrary {
     "unknownNetworkError": MessageLookupByLibrary.simpleMessage("不明なネットワークエラー"),
     "unnamed": MessageLookupByLibrary.simpleMessage("無題"),
     "update": MessageLookupByLibrary.simpleMessage("更新"),
+    "updateChecksumMismatch": MessageLookupByLibrary.simpleMessage(
+      "ダウンロードしたパッケージがSHA-256検証に失敗しました",
+    ),
+    "updateChecksumUnavailable": MessageLookupByLibrary.simpleMessage(
+      "更新パッケージのチェックサムを検証できません",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "更新をダウンロード中",
+    ),
+    "updateFailed": MessageLookupByLibrary.simpleMessage("更新に失敗しました"),
+    "updateInstallerError": MessageLookupByLibrary.simpleMessage(
+      "Androidインストーラーを開けませんでした",
+    ),
+    "updateInstallerOpened": MessageLookupByLibrary.simpleMessage(
+      "インストーラーを開きました。Androidで更新を確認してください。",
+    ),
+    "updateNoCompatiblePackage": MessageLookupByLibrary.simpleMessage(
+      "この端末に対応するAndroidパッケージが見つかりませんでした",
+    ),
+    "updateOpeningInstaller": MessageLookupByLibrary.simpleMessage(
+      "インストーラーを開いています",
+    ),
+    "updatePreparing": MessageLookupByLibrary.simpleMessage("更新を準備中"),
+    "updateVerifying": MessageLookupByLibrary.simpleMessage(
+      "パッケージを検証中",
+    ),
     "upload": MessageLookupByLibrary.simpleMessage("アップロード"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URL経由でプロファイルを取得"),

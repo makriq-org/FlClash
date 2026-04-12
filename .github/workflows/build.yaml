@@ -59,19 +59,30 @@ jobs:
           submodules: recursive
 
       - name: Setup Android Signing
-        if: startsWith(matrix.platform,'android') && env.KEYSTORE_B64 != '' && env.SERVICE_JSON_B64 != ''
+        if: startsWith(matrix.platform,'android') && env.KEYSTORE_B64 != ''
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE }}
-          SERVICE_JSON_B64: ${{ secrets.SERVICE_JSON }}
           KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
           STORE_PASSWORD_VALUE: ${{ secrets.STORE_PASSWORD }}
           KEY_PASSWORD_VALUE: ${{ secrets.KEY_PASSWORD }}
         run: |
           echo "${KEYSTORE_B64}" | base64 --decode > android/app/keystore.jks
-          echo "${SERVICE_JSON_B64}" | base64 --decode > android/app/google-services.json
           echo "keyAlias=${KEY_ALIAS_VALUE}" >> android/local.properties
           echo "storePassword=${STORE_PASSWORD_VALUE}" >> android/local.properties
           echo "keyPassword=${KEY_PASSWORD_VALUE}" >> android/local.properties
+
+      - name: Require Android Signing For Stable Release
+        if: startsWith(matrix.platform,'android') && env.IS_STABLE == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE }}
+          KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
+          STORE_PASSWORD_VALUE: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD_VALUE: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "${KEYSTORE_B64}" ] || [ -z "${KEY_ALIAS_VALUE}" ] || [ -z "${STORE_PASSWORD_VALUE}" ] || [ -z "${KEY_PASSWORD_VALUE}" ]; then
+            echo "Stable Android releases must be signed with fork release credentials." >&2
+            exit 1
+          fi
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -100,9 +111,9 @@ jobs:
           flutter --version
           flutter pub get
 
-      - name: Run Hardening Tests
+      - name: Run Android Regression Tests
         if: startsWith(matrix.platform,'android')
-        run: flutter test test/common/android_vpn_hardening_test.dart
+        run: flutter test test/common
 
       - name: Setup
         run: dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}

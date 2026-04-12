@@ -36,4 +36,5 @@ export 'super_grid.dart';
 export 'tab.dart';
 export 'text.dart';
 export 'theme.dart';
+export 'update_dialog.dart';
 export 'wave.dart';

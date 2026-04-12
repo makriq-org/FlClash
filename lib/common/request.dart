@@ -71,24 +71,98 @@ class Request {
     return MemoryImage(data);
   }
 
-  Future<Map<String, dynamic>?> checkForUpdate() async {
+  Future<AppRelease?> getLatestRelease() async {
+    final response = await dio
+        .get(
+          'https://api.github.com/repos/$repository/releases/latest',
+          options: Options(responseType: ResponseType.json),
+        )
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200 || response.data is! Map<String, dynamic>) {
+      return null;
+    }
+    return AppRelease.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<AppRelease?> checkForUpdate() async {
     try {
-      final response = await dio.get(
-        'https://api.github.com/repos/$repository/releases/latest',
-        options: Options(responseType: ResponseType.json),
-      );
-      if (response.statusCode != 200) return null;
-      final data = response.data as Map<String, dynamic>;
-      final remoteVersion = data['tag_name'];
+      final release = await getLatestRelease();
+      if (release == null) return null;
       final version = globalState.packageInfo.version;
       final hasUpdate =
-          utils.compareVersions(remoteVersion.replaceAll('v', ''), version) > 0;
+          utils.compareVersions(release.version, version) > 0;
       if (!hasUpdate) return null;
-      return data;
+      return release;
     } catch (e) {
       commonPrint.log('checkForUpdate failed', logLevel: LogLevel.warning);
       return null;
     }
+  }
+
+  Future<String?> getExpectedSha256(
+    AppRelease release,
+    ReleaseAsset asset,
+  ) async {
+    final digest = asset.sha256Digest;
+    if (digest != null) {
+      return digest;
+    }
+    final checksumAsset = release.findSha256AssetFor(asset);
+    if (checksumAsset == null) {
+      return null;
+    }
+    try {
+      final response = await dio
+          .get<String>(
+            checksumAsset.browserDownloadUrl,
+            options: Options(responseType: ResponseType.plain),
+          )
+          .timeout(const Duration(seconds: 20));
+      return parseSha256Content(response.data);
+    } catch (error) {
+      if (error is DioException) {
+        if (error.type == DioExceptionType.cancel) {
+          rethrow;
+        }
+        throw appLocalizations.networkException;
+      }
+      rethrow;
+    }
+  }
+
+  Future<File> downloadReleaseAsset(
+    ReleaseAsset asset,
+    String savePath, {
+    CancelToken? cancelToken,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final file = File(savePath);
+    await file.parent.create(recursive: true);
+    if (await file.exists()) {
+      await file.delete();
+    }
+    try {
+      await dio.download(
+        asset.browserDownloadUrl,
+        savePath,
+        cancelToken: cancelToken,
+        onReceiveProgress: onReceiveProgress,
+        options: Options(
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 5),
+        ),
+      );
+    } catch (error) {
+      await file.safeDelete();
+      if (error is DioException) {
+        if (error.type == DioExceptionType.cancel) {
+          rethrow;
+        }
+        throw appLocalizations.networkException;
+      }
+      rethrow;
+    }
+    return file;
   }
 
   final Map<String, IpInfo Function(Map<String, dynamic>)> _ipInfoSources = {
@@ -164,7 +238,7 @@ class Request {
       final response = await dio
           .post(
             'http://$localhost:$helperPort/start',
-            data: json.encode({'path': appPath.corePath, 'arg': arg}),
+            data: jsonEncode({'path': appPath.corePath, 'arg': arg}),
             options: Options(responseType: ResponseType.plain),
           )
           .timeout(const Duration(milliseconds: 2000));

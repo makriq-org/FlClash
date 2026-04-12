@@ -18,6 +18,19 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup Android Signing
+        if: env.KEYSTORE_B64 != ''
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE }}
+          KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
+          STORE_PASSWORD_VALUE: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD_VALUE: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "${KEYSTORE_B64}" | base64 --decode > android/app/keystore.jks
+          echo "keyAlias=${KEY_ALIAS_VALUE}" >> android/local.properties
+          echo "storePassword=${STORE_PASSWORD_VALUE}" >> android/local.properties
+          echo "keyPassword=${KEY_PASSWORD_VALUE}" >> android/local.properties
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -46,8 +59,8 @@ jobs:
           flutter --version
           flutter pub get
 
-      - name: Run Hardening Tests
-        run: flutter test test/common/android_vpn_hardening_test.dart
+      - name: Run Android Regression Tests
+        run: flutter test test/common
 
       - name: Build Android Artifacts
         run: dart setup.dart android

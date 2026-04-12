@@ -8,7 +8,7 @@ RUN_ID = os.getenv("RUN_ID")
 
 IS_STABLE = "-" not in TAG
 
-CHAT_ID = "@FlClash"
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 API_URL = f"http://localhost:8081/bot{TELEGRAM_BOT_TOKEN}/sendMediaGroup"
 
 DIST_DIR = os.path.join(os.getcwd(), "dist")
@@ -45,9 +45,9 @@ if TAG:
     text += f"\n**{TAG}**\n"
 
 if IS_STABLE:
-    text += f"\nhttps://github.com/chen08209/FlClash/releases/tag/{TAG}\n"
+    text += f"\nhttps://github.com/makriq3/FlClash/releases/tag/{TAG}\n"
 else:
-    text += f"\nhttps://github.com/chen08209/FlClash/actions/runs/{RUN_ID}\n"
+    text += f"\nhttps://github.com/makriq3/FlClash/actions/runs/{RUN_ID}\n"
 
 if os.path.exists(release):
     text += "\n"
@@ -58,6 +58,10 @@ if os.path.exists(release):
 if media:
     media[-1]["caption"] = text
     media[-1]["parse_mode"] = "Markdown"
+
+if not TELEGRAM_BOT_TOKEN or not CHAT_ID:
+    print("Skip Telegram release broadcast: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set.")
+    raise SystemExit(0)
 
 response = requests.post(
     API_URL,

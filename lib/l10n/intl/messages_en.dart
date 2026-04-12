@@ -389,6 +389,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "global": MessageLookupByLibrary.simpleMessage("Global"),
     "go": MessageLookupByLibrary.simpleMessage("Go"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "Download and install",
+    ),
     "goDownload": MessageLookupByLibrary.simpleMessage("Go to download"),
     "goToConfigureScript": MessageLookupByLibrary.simpleMessage(
       "Go to configure script",
@@ -828,6 +831,34 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "unnamed": MessageLookupByLibrary.simpleMessage("Unnamed"),
     "update": MessageLookupByLibrary.simpleMessage("Update"),
+    "updateChecksumMismatch": MessageLookupByLibrary.simpleMessage(
+      "Downloaded package failed SHA-256 verification",
+    ),
+    "updateChecksumUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Unable to verify update package checksum",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "Downloading update",
+    ),
+    "updateFailed": MessageLookupByLibrary.simpleMessage("Update failed"),
+    "updateInstallerError": MessageLookupByLibrary.simpleMessage(
+      "Unable to open Android installer",
+    ),
+    "updateInstallerOpened": MessageLookupByLibrary.simpleMessage(
+      "Installer opened. Confirm the update in Android.",
+    ),
+    "updateNoCompatiblePackage": MessageLookupByLibrary.simpleMessage(
+      "No compatible Android package was found for this device",
+    ),
+    "updateOpeningInstaller": MessageLookupByLibrary.simpleMessage(
+      "Opening installer",
+    ),
+    "updatePreparing": MessageLookupByLibrary.simpleMessage(
+      "Preparing update",
+    ),
+    "updateVerifying": MessageLookupByLibrary.simpleMessage(
+      "Verifying package",
+    ),
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage(

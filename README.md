@@ -4,13 +4,13 @@
 
 </div>
 
-# FlClash Hardened
+# FlClash
 
 [![Downloads](https://img.shields.io/github/downloads/makriq3/FlClash/total?style=flat-square&logo=github)](https://github.com/makriq3/FlClash/releases/)[![Last Version](https://img.shields.io/github/release/makriq3/FlClash/all.svg?style=flat-square)](https://github.com/makriq3/FlClash/releases/)[![License](https://img.shields.io/github/license/makriq3/FlClash?style=flat-square)](LICENSE)
 
-Privacy-hardened FlClash fork with a strong focus on Android VPN safety, localhost leak reduction, and release automation that is independent from upstream infrastructure.
+Independent FlClash release maintained by `makriq3`, focused on Android VPN safety, simpler updates, and a release pipeline fully owned by this repository.
 
-## What Makes This Fork Different
+## Product Focus
 
 - Android VPN mode is hardened against localhost proxy leaks.
 - Android VPN hardening is enforced at runtime, including live config refreshes after startup.
@@ -89,17 +89,12 @@ Important: this fork reduces what the client leaks by itself. It does not claim 
 - Branch Android artifacts: GitHub Actions `android-branch-build`
 - Stable multi-platform release: tag push `v*`
 
-## Project Direction
+## Product Direction
 
-This repository is being developed as a maintained privacy-hardened fork, not just a mirror of upstream releases.
-
-That means this fork will gradually build its own:
+This repository is being developed as a standalone release line with its own:
 
 - Android privacy hardening policy,
+- application identifiers and packaging metadata,
 - release pipeline,
 - security documentation,
 - and feature roadmap.
-
-## Upstream
-
-This repository started as a fork of [chen08209/FlClash](https://github.com/chen08209/FlClash). Upstream deserves full credit for the original project and cross-platform base.
