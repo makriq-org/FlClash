@@ -118,6 +118,17 @@
 
 - Android reporting VPN transport via `NetworkCapabilities`.
 - Absence of `NET_CAPABILITY_NOT_VPN` on the active VPN network.
+
+### Update Dialog Simplification (2026-04-13)
+
+- Текущий обработчик обновлений жил в `lib/controller.dart` на основе `globalState.showMessage(...)` с двумя действиями.
+- Отказ от релиза при автообновлении раньше отключал `autoCheckUpdate` глобально, что создавало неочевидное поведение.
+- Новая продуктовая логика обновления для Android:
+  - `Позже` закрывает окно без побочных эффектов.
+  - `Пропустить релиз` сохраняет пропуск только для текущего `tagName` релиза в `SharedPreferences`.
+  - `Скачать и установить` очищает пропуск и запускает существующий Android self-update pipeline.
+- Для хранения пропущенного релиза используется отдельный ключ `skippedReleaseTag` в `lib/common/preferences.dart`.
+- Ручная проверка обновлений должна игнорировать сохранённый пропуск и всё равно показывать релиз пользователю.
 - Visibility of TUN-style interfaces and some route / MTU / DNS signs to apps using public Android APIs.
 - These require device-side root hooking / API hiding tools such as Xposed/LSPosed modules.
 
@@ -683,3 +694,20 @@
   - push the documentation / metadata pass to `main`
   - use the branch Android Actions workflow on `main` as the pre-release verification gate
   - only after a green branch build, recreate tag `v0.8.97` from the verified `main`
+
+### Release Notes Formatting Follow-Up (2026-04-13)
+
+- User feedback on `v0.8.97`:
+  - the release page looked like a short README / policy text instead of concise release notes
+  - the `v0.8.97` changelog wording also read like instructions rather than completed changes
+- Root cause:
+  - release workflow prepended `.github/release_template.md` before the actual changelog excerpt
+  - the template itself was written as a generic repository description
+- Fix direction:
+  - make the template a short footer with only practical release links
+  - generate release body in this order:
+    - title
+    - changelog excerpt for the tag
+    - short footer
+  - rewrite `v0.8.97` changelog entry in release-note style
+  - update the already published `v0.8.97` body in place so users do not keep seeing the bad format
