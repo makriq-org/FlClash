@@ -1,3 +1,11 @@
+## v0.8.96
+
+### Production Identity Cleanup
+
+- Fix Android native `JNI` bindings so the renamed `com.makriq.flclash` package works end-to-end at runtime.
+- Remove the last old vendor metadata from the Windows release manifest and publish desktop binaries as `FlClash`.
+- Drop unused Firebase entries from the Android version catalog after removing Google Services integration from the product line.
+
 ## v0.8.95
 
 ### Product Identity And Release Independence

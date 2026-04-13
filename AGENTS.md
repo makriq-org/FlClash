@@ -582,3 +582,38 @@
 - The intended runs to keep after release are:
   - `android-branch-build` on `main`
   - `build` for release tag `v0.8.94`
+
+### Production Cleanup Follow-Up And Runtime Namespace Risk (2026-04-12)
+
+- After the standalone rebrand landed, one more Android runtime risk was identified before the next release:
+  - `android/core/src/main/cpp/core.cpp` still exported JNI symbols under `Java_com_follow_clash_core_Core_*`
+  - Java/Kotlin packages had already moved to `com.makriq.flclash.core`
+  - build validation could still pass because the native library compiles, but Android runtime native method binding would fail once the renamed `Core` class invoked those methods
+- Fixes applied for the production release line:
+  - updated all native JNI export names in `android/core/src/main/cpp/core.cpp` to `Java_com_makriq_flclash_core_Core_*`
+  - updated `JNI_OnLoad` class lookups from `com/follow/clash/core/*` to `com/makriq/flclash/core/*`
+  - removed the last old Windows vendor metadata from `windows/runner/Runner.rc` (`CompanyName`, `InternalName`, `ProductName`, copyright)
+  - removed now-unused Firebase entries from `android/gradle/libs.versions.toml` after the product line was decoupled from Google Services
+  - normalized leftover user-facing localization strings so product text no longer references Firebase Crashlytics directly
+- Verification notes:
+  - repo-wide search outside `AGENTS.md` no longer returns `com.follow`, `chen08209/FlClash`, `follow/clash`, or `Firebase Crashlytics`
+  - local Flutter/Dart execution is still unavailable in the workstation environment, so release verification continues through GitHub Actions
+- Release signing follow-up:
+  - first post-cleanup `android-branch-build` run on `main` failed during `Build Android Artifacts` even though tests were green
+  - root cause was repository secret mismatch for the Android release keystore:
+    - Gradle reported `keystore password was incorrect`
+    - the fork uses a PKCS12 keystore, and `KEY_PASSWORD` needed to match `STORE_PASSWORD` for this signing setup
+  - repository secrets were re-uploaded from the local keystore backup with aligned values:
+    - `KEYSTORE`
+    - `KEY_ALIAS`
+    - `STORE_PASSWORD`
+    - `KEY_PASSWORD`
+- Final verification before release:
+  - `android-branch-build` run `24313864713`, attempt `2`, completed successfully on commit `a565f2d`
+  - the successful run covered:
+    - Android signing setup
+    - Android regression tests
+    - full Android artifact build
+    - artifact upload
+- Release intent updated:
+  - supersede failed `v0.8.95` with `v0.8.96` after production cleanup and runtime namespace correction
