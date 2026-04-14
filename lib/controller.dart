@@ -707,6 +707,11 @@ extension SetupControllerExt on AppController {
     if (scriptContent?.isNotEmpty == true) {
       rawConfig = await globalState.handleEvaluate(scriptContent!, rawConfig);
     }
+    rawConfig = await normalizeAndroidProfileAccessControlConfig(
+      rawConfig,
+      isAndroid: system.isAndroid,
+      profilesPath: await appPath.profilesPath,
+    );
     onAndroidAccessControlResolved?.call(
       resolveAndroidProfileAccessControlOverride(
         rawConfig,
