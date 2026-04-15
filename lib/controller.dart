@@ -712,7 +712,11 @@ extension SetupControllerExt on AppController {
     if (scriptContent?.isNotEmpty == true) {
       rawConfig = await globalState.handleEvaluate(scriptContent!, rawConfig);
     }
-    final installedPackageNames = system.isAndroid
+    final installedPackageNames =
+        shouldRequestInstalledPackageAccessForAndroidProfile(
+          rawConfig,
+          isAndroid: system.isAndroid,
+        )
         ? (await getPackages()).map((item) => item.packageName).toList()
         : const <String>[];
     rawConfig = await normalizeAndroidProfileAccessControlConfig(
@@ -894,9 +898,41 @@ extension CoreControllerExt on AppController {
 }
 
 extension SystemControllerExt on AppController {
+  Future<bool> _ensureInstalledAppAccessConsent() async {
+    if (!system.isAndroid) {
+      return true;
+    }
+
+    final consent = await preferences.getInstalledAppAccessConsent();
+    if (consent != null) {
+      return consent;
+    }
+
+    final allowAccess = await globalState.showMessage(
+      title: appLocalizations.tip,
+      message: const TextSpan(
+        text:
+            'FlClash can use the installed apps list to expand split '
+            'tunneling rules like *.yandex.* before Android VPN starts.\n\n'
+            'This helps keep Russian apps reachable even when they reject VPN '
+            'traffic and also helps the fork stay maintainable for the '
+            'developer.\n\n'
+            'You can skip this. FlClash will continue to start normally, but '
+            'package masks and regular expressions will be ignored until you '
+            'allow access.',
+      ),
+    );
+    final resolvedConsent = allowAccess == true;
+    await preferences.setInstalledAppAccessConsent(resolvedConsent);
+    return resolvedConsent;
+  }
+
   Future<List<Package>> getPackages() async {
     if (_ref.read(isMobileViewProvider)) {
       await Future.delayed(commonDuration);
+    }
+    if (!await _ensureInstalledAppAccessConsent()) {
+      return const [];
     }
     if (_ref.read(packagesProvider).isEmpty) {
       _ref.read(packagesProvider.notifier).value =
