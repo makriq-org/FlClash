@@ -2,6 +2,9 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
+import 'package:fl_clash/common/request.dart';
+import 'package:fl_clash/common/string.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:path/path.dart' as path;
@@ -18,22 +21,41 @@ Future<Map<String, dynamic>> normalizeAndroidProfileAccessControlConfig(
   Map<String, dynamic> rawConfig, {
   required bool isAndroid,
   String? profilesPath,
+  int? profileId,
 }) async {
   if (!isAndroid) {
     return rawConfig;
   }
 
   final tun = _asStringKeyedMap(rawConfig['tun']);
-  final includePackageFiles = _asPackageFileList(
+  final includePackageSources = _asPackageListSources(
     tun['include-package-file'],
     fieldName: 'tun.include-package-file',
   );
-  final excludePackageFiles = _asPackageFileList(
+  final excludePackageSources = _asPackageListSources(
     tun['exclude-package-file'],
     fieldName: 'tun.exclude-package-file',
   );
+  final includePackageUrls = _asPackageListSources(
+    tun['include-package-url'],
+    fieldName: 'tun.include-package-url',
+    preferUrl: true,
+  );
+  final excludePackageUrls = _asPackageListSources(
+    tun['exclude-package-url'],
+    fieldName: 'tun.exclude-package-url',
+    preferUrl: true,
+  );
+  final mergedIncludeSources = [
+    ...includePackageSources,
+    ...includePackageUrls,
+  ];
+  final mergedExcludeSources = [
+    ...excludePackageSources,
+    ...excludePackageUrls,
+  ];
 
-  if (includePackageFiles.isEmpty && excludePackageFiles.isEmpty) {
+  if (mergedIncludeSources.isEmpty && mergedExcludeSources.isEmpty) {
     return rawConfig;
   }
 
@@ -50,9 +72,10 @@ Future<Map<String, dynamic>> normalizeAndroidProfileAccessControlConfig(
       normalizedTun['include-package'],
       fieldName: 'tun.include-package',
     ),
-    ...await _readPackageListsFromFiles(
-      includePackageFiles,
+    ...await _readPackageLists(
+      mergedIncludeSources,
       profilesPath: resolvedProfilesPath,
+      profileId: profileId,
       fieldName: 'tun.include-package-file',
     ),
   }.toList();
@@ -61,9 +84,10 @@ Future<Map<String, dynamic>> normalizeAndroidProfileAccessControlConfig(
       normalizedTun['exclude-package'],
       fieldName: 'tun.exclude-package',
     ),
-    ...await _readPackageListsFromFiles(
-      excludePackageFiles,
+    ...await _readPackageLists(
+      mergedExcludeSources,
       profilesPath: resolvedProfilesPath,
+      profileId: profileId,
       fieldName: 'tun.exclude-package-file',
     ),
   }.toList();
@@ -76,6 +100,8 @@ Future<Map<String, dynamic>> normalizeAndroidProfileAccessControlConfig(
   }
   normalizedTun.remove('include-package-file');
   normalizedTun.remove('exclude-package-file');
+  normalizedTun.remove('include-package-url');
+  normalizedTun.remove('exclude-package-url');
 
   final patched = Map<String, dynamic>.from(rawConfig);
   patched['tun'] = normalizedTun;
@@ -363,60 +389,257 @@ List<String> _asPackageList(dynamic value, {required String fieldName}) {
   return packages.toList();
 }
 
-List<String> _asPackageFileList(dynamic value, {required String fieldName}) {
+List<_PackageListSource> _asPackageListSources(
+  dynamic value, {
+  required String fieldName,
+  bool preferUrl = false,
+}) {
   if (value == null) {
     return const [];
   }
   if (value is String) {
     final normalized = value.trim();
-    return normalized.isEmpty ? const [] : [normalized];
+    if (normalized.isEmpty) {
+      return const [];
+    }
+    if (preferUrl && !_isHttpUrl(normalized)) {
+      throw FormatException(
+        'Profile field `$fieldName` must contain a valid HTTP(S) URL: '
+        '$normalized',
+      );
+    }
+    return [
+      _PackageListSource(
+        url: _isHttpUrl(normalized) || preferUrl ? normalized : null,
+        path: _isHttpUrl(normalized) || preferUrl ? null : normalized,
+      ),
+    ];
+  }
+  if (value is Map || value is YamlMap) {
+    final source = _asPackageListSourceDescriptor(
+      value,
+      fieldName: fieldName,
+      preferUrl: preferUrl,
+    );
+    return source == null ? const [] : [source];
   }
   if (value is! List) {
     throw FormatException(
-      'Profile field `$fieldName` must be a path or a YAML list of file paths.',
+      'Profile field `$fieldName` must be a path, a URL, a source map, or '
+      'a YAML list of those values.',
     );
   }
-  final filePaths = <String>{};
+  final sources = <_PackageListSource>{};
   for (final item in value) {
-    final normalized = item.toString().trim();
-    if (normalized.isEmpty) {
+    if (item is String) {
+      final normalized = item.trim();
+      if (normalized.isEmpty) {
+        continue;
+      }
+      if (preferUrl && !_isHttpUrl(normalized)) {
+        throw FormatException(
+          'Profile field `$fieldName` must contain valid HTTP(S) URLs: '
+          '$normalized',
+        );
+      }
+      sources.add(
+        _PackageListSource(
+          url: _isHttpUrl(normalized) || preferUrl ? normalized : null,
+          path: _isHttpUrl(normalized) || preferUrl ? null : normalized,
+        ),
+      );
       continue;
     }
-    filePaths.add(normalized);
+    final source = _asPackageListSourceDescriptor(
+      item,
+      fieldName: fieldName,
+      preferUrl: preferUrl,
+    );
+    if (source != null) {
+      sources.add(source);
+    }
   }
-  return filePaths.toList();
+  return sources.toList();
 }
 
-Future<List<String>> _readPackageListsFromFiles(
-  List<String> filePaths, {
+_PackageListSource? _asPackageListSourceDescriptor(
+  dynamic value, {
+  required String fieldName,
+  required bool preferUrl,
+}) {
+  if (value is! Map && value is! YamlMap) {
+    throw FormatException(
+      'Profile field `$fieldName` accepts only strings or source maps.',
+    );
+  }
+  final normalized = _asStringKeyedMap(value);
+  final rawPath = normalized['path']?.toString().trim();
+  final rawUrl = normalized['url']?.toString().trim();
+  final pathValue = rawPath == null || rawPath.isEmpty ? null : rawPath;
+  final urlValue = rawUrl == null || rawUrl.isEmpty ? null : rawUrl;
+  if (pathValue == null && urlValue == null) {
+    return null;
+  }
+  if (urlValue != null && !_isHttpUrl(urlValue)) {
+    throw FormatException(
+      'Profile field `$fieldName` contains an invalid URL source: $urlValue',
+    );
+  }
+  if (preferUrl && urlValue == null) {
+    if (pathValue == null || !_isHttpUrl(pathValue)) {
+      throw FormatException(
+        'Profile field `$fieldName` must contain valid HTTP(S) URLs.',
+      );
+    }
+  }
+  if (preferUrl &&
+      urlValue == null &&
+      pathValue != null &&
+      _isHttpUrl(pathValue)) {
+    return _PackageListSource(url: pathValue);
+  }
+  return _PackageListSource(path: pathValue, url: urlValue);
+}
+
+Future<List<String>> _readPackageLists(
+  List<_PackageListSource> sources, {
   required String profilesPath,
+  int? profileId,
   required String fieldName,
 }) async {
   final packages = <String>{};
-  for (final rawPath in filePaths) {
-    final resolvedPath = _resolvePackageListPath(rawPath, profilesPath);
-    final file = File(resolvedPath);
-    if (!await file.exists()) {
-      throw FormatException(
-        'Package list file for `$fieldName` was not found: $resolvedPath',
-      );
-    }
-    final content = await file.readAsString();
+  for (final source in sources) {
+    final sourceFieldName = source.url != null
+        ? fieldName.replaceAll('-file', '-url')
+        : fieldName;
+    final content = source.url != null
+        ? await _readPackageListFromRemoteSource(
+            source,
+            profilesPath: profilesPath,
+            profileId: profileId,
+            fieldName: sourceFieldName,
+          )
+        : await _readPackageListFromLocalSource(
+            source,
+            profilesPath: profilesPath,
+            fieldName: sourceFieldName,
+          );
     packages.addAll(
       _parsePackageListFileContent(
         content,
-        fieldName: fieldName,
-        path: resolvedPath,
+        fieldName: sourceFieldName,
+        path: source.url ?? source.path ?? sourceFieldName,
       ),
     );
   }
   return packages.toList();
 }
 
+Future<String> _readPackageListFromLocalSource(
+  _PackageListSource source, {
+  required String profilesPath,
+  required String fieldName,
+}) async {
+  final rawPath = source.path;
+  if (rawPath == null || rawPath.isEmpty) {
+    throw FormatException(
+      'Package list file for `$fieldName` is missing a valid local path.',
+    );
+  }
+  final resolvedPath = _resolvePackageListPath(rawPath, profilesPath);
+  final file = File(resolvedPath);
+  if (!await file.exists()) {
+    throw FormatException(
+      'Package list file for `$fieldName` was not found: $resolvedPath',
+    );
+  }
+  return file.readAsString();
+}
+
+Future<String> _readPackageListFromRemoteSource(
+  _PackageListSource source, {
+  required String profilesPath,
+  required int? profileId,
+  required String fieldName,
+}) async {
+  final rawUrl = source.url;
+  if (rawUrl == null || rawUrl.isEmpty) {
+    throw FormatException(
+      'Package list URL for `$fieldName` is missing a valid remote source.',
+    );
+  }
+  final cachePath = _resolvePackageListCachePath(
+    source,
+    profilesPath: profilesPath,
+    profileId: profileId,
+    fieldName: fieldName,
+  );
+  final cacheFile = File(cachePath);
+  await cacheFile.parent.create(recursive: true);
+  try {
+    final response = await request.dio.get<String>(
+      rawUrl,
+      options: Options(
+        responseType: ResponseType.plain,
+        sendTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 20),
+      ),
+    );
+    final content = response.data ?? '';
+    await cacheFile.writeAsString(content);
+    return content;
+  } catch (_) {
+    if (await cacheFile.exists()) {
+      return cacheFile.readAsString();
+    }
+    throw FormatException(
+      'Package list URL for `$fieldName` could not be fetched and no cache '
+      'is available: $rawUrl',
+    );
+  }
+}
+
 String _resolvePackageListPath(String rawPath, String profilesPath) {
   return path.normalize(
     path.isAbsolute(rawPath) ? rawPath : path.join(profilesPath, rawPath),
   );
+}
+
+String _resolvePackageListCachePath(
+  _PackageListSource source, {
+  required String profilesPath,
+  required int? profileId,
+  required String fieldName,
+}) {
+  final rawUrl = source.url;
+  if (rawUrl == null || rawUrl.isEmpty) {
+    throw FormatException(
+      'Package list URL for `$fieldName` is missing a cacheable source.',
+    );
+  }
+  final rawPath = source.path?.trim();
+  if (rawPath != null && rawPath.isNotEmpty) {
+    return _resolvePackageListPath(rawPath, profilesPath);
+  }
+  if (profileId == null) {
+    throw FormatException(
+      'Package list URL for `$fieldName` requires a profile id to cache data.',
+    );
+  }
+  return path.join(
+    profilesPath,
+    'providers',
+    profileId.toString(),
+    'packages',
+    rawUrl.toMd5(),
+  );
+}
+
+bool _isHttpUrl(String value) {
+  final uri = Uri.tryParse(value);
+  return uri != null &&
+      (uri.scheme == 'http' || uri.scheme == 'https') &&
+      uri.hasAuthority;
 }
 
 List<String> _parsePackageListFileContent(
@@ -535,4 +758,21 @@ bool _isValidOctets(List<String?> octets) {
     final value = int.tryParse(octet ?? '');
     return value != null && value >= 0 && value <= 255;
   });
+}
+
+class _PackageListSource {
+  final String? path;
+  final String? url;
+
+  const _PackageListSource({this.path, this.url});
+
+  @override
+  bool operator ==(Object other) {
+    return other is _PackageListSource &&
+        other.path == path &&
+        other.url == url;
+  }
+
+  @override
+  int get hashCode => Object.hash(path, url);
 }

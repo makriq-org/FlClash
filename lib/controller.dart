@@ -561,8 +561,13 @@ extension SetupControllerExt on AppController {
         if (!_ref.read(initProvider)) {
           return;
         }
-        await globalState.handleStart([updateRunTime, updateTraffic]);
-        applyProfileDebounce(force: true, silence: true);
+        await applyProfile(
+          force: true,
+          silence: true,
+          preloadInvoke: () async {
+            await globalState.handleStart([updateRunTime, updateTraffic]);
+          },
+        );
       } else {
         globalState.needInitStatus = false;
         await applyProfile(
@@ -649,7 +654,7 @@ extension SetupControllerExt on AppController {
   Future<void> applyProfile({
     bool silence = false,
     bool force = false,
-    VoidCallback? preloadInvoke,
+    FutureOr<void> Function()? preloadInvoke,
   }) async {
     if (!force && !await needSetup()) {
       return;
@@ -711,6 +716,7 @@ extension SetupControllerExt on AppController {
       rawConfig,
       isAndroid: system.isAndroid,
       profilesPath: await appPath.profilesPath,
+      profileId: profileId,
     );
     onAndroidAccessControlResolved?.call(
       resolveAndroidProfileAccessControlOverride(
@@ -755,7 +761,7 @@ extension SetupControllerExt on AppController {
     return res;
   }
 
-  Future<void> _setupConfig([VoidCallback? preloadInvoke]) async {
+  Future<void> _setupConfig([FutureOr<void> Function()? preloadInvoke]) async {
     commonPrint.log('setup ===>');
     var profile = _ref.read(currentProfileProvider);
     final nextProfile = await profile?.checkAndUpdateAndCopy();

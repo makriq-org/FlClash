@@ -28,14 +28,26 @@ class _AccessViewState extends ConsumerState<AccessView> {
 
   final _completer = Completer();
 
+  AccessControlProps? get _profileManagedAccessControl =>
+      globalState.lastAndroidProfileAccessControlOverride;
+
+  bool get _isProfileManaged => _profileManagedAccessControl != null;
+
   @override
   void initState() {
     super.initState();
     _controller = ScrollController();
     _completer.complete(appController.getPackages());
-    final accessControl = ref
-        .read(vpnSettingProvider.select((state) => state.accessControlProps))
-        .copyWith();
+    final AccessControlProps accessControl =
+        (_profileManagedAccessControl ??
+                appController.sharedState.vpnOptions?.accessControlProps ??
+                ref.read(
+                  vpnSettingProvider.select(
+                    (state) => state.accessControlProps,
+                  ),
+                ) ??
+                const AccessControlProps())
+            .copyWith();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(accessControlStateProvider.notifier).value = accessControl;
       _isInit = true;
@@ -85,6 +97,9 @@ class _AccessViewState extends ConsumerState<AccessView> {
   }
 
   Future<void> _intelligentSelected() async {
+    if (_isProfileManaged) {
+      return;
+    }
     final packageNames = ref.read(
       packagesProvider.select((state) => state.map((item) => item.packageName)),
     );
@@ -111,6 +126,9 @@ class _AccessViewState extends ConsumerState<AccessView> {
   }
 
   Future<void> _handleToSetting() async {
+    if (_isProfileManaged) {
+      return;
+    }
     await showSheet<int>(
       context: context,
       props: SheetProps(isScrollControlled: true),
@@ -125,6 +143,9 @@ class _AccessViewState extends ConsumerState<AccessView> {
   }
 
   void _handleSelected(String packageName) {
+    if (_isProfileManaged) {
+      return;
+    }
     ref.read(accessControlStateProvider.notifier).update((state) {
       final newSet = Set<String>.from(state.currentList)
         ..addOrRemove(packageName);
@@ -133,6 +154,9 @@ class _AccessViewState extends ConsumerState<AccessView> {
   }
 
   void _handleToggle() {
+    if (_isProfileManaged) {
+      return;
+    }
     ref.read(accessControlStateProvider.notifier).update((state) {
       return state.copyWith(enable: !state.enable);
     });
@@ -178,6 +202,9 @@ class _AccessViewState extends ConsumerState<AccessView> {
   }
 
   void _handleSave() {
+    if (_isProfileManaged) {
+      return;
+    }
     final accessControl = ref.read(accessControlStateProvider);
     ref
         .read(vpnSettingProvider.notifier)
@@ -189,6 +216,9 @@ class _AccessViewState extends ConsumerState<AccessView> {
   }
 
   Widget _buildConfirm() {
+    if (_isProfileManaged) {
+      return SizedBox();
+    }
     return Consumer(
       builder: (_, ref, child) {
         final accessControl = ref.watch(accessControlStateProvider);
@@ -229,6 +259,9 @@ class _AccessViewState extends ConsumerState<AccessView> {
   }
 
   Future<void> _importFormClipboard() async {
+    if (_isProfileManaged) {
+      return;
+    }
     await appController.safeRun(() async {
       final data = await Clipboard.getData('text/plain');
       final text = data?.text;
@@ -254,42 +287,46 @@ class _AccessViewState extends ConsumerState<AccessView> {
         },
         popup: CommonPopupMenu(
           items: [
-            PopupMenuItemData(
-              icon: Icons.swap_horiz,
-              label: enable
-                  ? appLocalizations.turnOff
-                  : appLocalizations.turnOn,
-              onPressed: _handleToggle,
-            ),
+            if (!_isProfileManaged)
+              PopupMenuItemData(
+                icon: Icons.swap_horiz,
+                label: enable
+                    ? appLocalizations.turnOff
+                    : appLocalizations.turnOn,
+                onPressed: _handleToggle,
+              ),
             PopupMenuItemData(
               icon: Icons.search,
               label: appLocalizations.search,
               onPressed: _handleSearch,
             ),
-            PopupMenuItemData(
-              icon: Icons.tune,
-              label: appLocalizations.settings,
-              onPressed: _handleToSetting,
-            ),
+            if (!_isProfileManaged)
+              PopupMenuItemData(
+                icon: Icons.tune,
+                label: appLocalizations.settings,
+                onPressed: _handleToSetting,
+              ),
             PopupMenuItemData(
               icon: Icons.emergency_outlined,
               label: appLocalizations.action,
               subItems: [
-                PopupMenuItemData(
-                  icon: Icons.auto_awesome,
-                  label: appLocalizations.intelligentSelected,
-                  onPressed: _intelligentSelected,
-                ),
+                if (!_isProfileManaged)
+                  PopupMenuItemData(
+                    icon: Icons.auto_awesome,
+                    label: appLocalizations.intelligentSelected,
+                    onPressed: _intelligentSelected,
+                  ),
                 PopupMenuItemData(
                   icon: Icons.content_copy,
                   label: appLocalizations.clipboardExport,
                   onPressed: _exportToClipboard,
                 ),
-                PopupMenuItemData(
-                  icon: Icons.paste,
-                  label: appLocalizations.clipboardImport,
-                  onPressed: _importFormClipboard,
-                ),
+                if (!_isProfileManaged)
+                  PopupMenuItemData(
+                    icon: Icons.paste,
+                    label: appLocalizations.clipboardImport,
+                    onPressed: _importFormClipboard,
+                  ),
               ],
             ),
           ],
@@ -365,6 +402,21 @@ class _AccessViewState extends ConsumerState<AccessView> {
     );
   }
 
+  Widget _buildProfileManagedBanner() {
+    return MaterialBanner(
+      content: const Text(
+        'This Android split tunneling configuration is currently managed by '
+        'the active profile YAML.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: _exportToClipboard,
+          child: Text(appLocalizations.clipboardExport),
+        ),
+      ],
+    );
+  }
+
   void _onSearch(String value) {
     ref.read(queryProvider(QueryTag.access).notifier).value = value;
     _pinedList = null;
@@ -412,6 +464,7 @@ class _AccessViewState extends ConsumerState<AccessView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (_isProfileManaged) _buildProfileManagedBanner(),
             _buildBannerBar(mode, valueList.length),
             SizedBox(height: 8),
             Expanded(
@@ -423,10 +476,12 @@ class _AccessViewState extends ConsumerState<AccessView> {
           ],
         ),
       ),
-      floatingActionButton: _buildSelectedAllButton(
-        isSelectedAll: valueList.length == viewPackageNameList.length,
-        allValueList: viewPackageNameList,
-      ),
+      floatingActionButton: _isProfileManaged
+          ? null
+          : _buildSelectedAllButton(
+              isSelectedAll: valueList.length == viewPackageNameList.length,
+              allValueList: viewPackageNameList,
+            ),
     );
   }
 }
