@@ -712,16 +712,21 @@ extension SetupControllerExt on AppController {
     if (scriptContent?.isNotEmpty == true) {
       rawConfig = await globalState.handleEvaluate(scriptContent!, rawConfig);
     }
+    final installedPackageNames = system.isAndroid
+        ? (await getPackages()).map((item) => item.packageName).toList()
+        : const <String>[];
     rawConfig = await normalizeAndroidProfileAccessControlConfig(
       rawConfig,
       isAndroid: system.isAndroid,
       profilesPath: await appPath.profilesPath,
       profileId: profileId,
+      installedPackageNames: installedPackageNames,
     );
     onAndroidAccessControlResolved?.call(
       resolveAndroidProfileAccessControlOverride(
         rawConfig,
         isAndroid: system.isAndroid,
+        installedPackageNames: installedPackageNames,
       ),
     );
     rawConfig = applyAndroidVpnProfileCompatibility(
