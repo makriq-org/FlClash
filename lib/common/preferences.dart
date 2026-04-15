@@ -54,14 +54,14 @@ class Preferences {
     await preferences?.remove('skippedReleaseTag');
   }
 
-  Future<bool?> getInstalledAppAccessConsent() async {
+  Future<bool> getInstalledAppAccessInfoShown() async {
     final preferences = await sharedPreferencesCompleter.future;
-    return preferences?.getBool(installedAppAccessConsentKey);
+    return preferences?.getBool(installedAppAccessInfoShownKey) ?? false;
   }
 
-  Future<void> setInstalledAppAccessConsent(bool value) async {
+  Future<void> setInstalledAppAccessInfoShown(bool value) async {
     final preferences = await sharedPreferencesCompleter.future;
-    await preferences?.setBool(installedAppAccessConsentKey, value);
+    await preferences?.setBool(installedAppAccessInfoShownKey, value);
   }
 
   Future<Map<String, Object?>?> getConfigMap() async {

@@ -898,43 +898,43 @@ extension CoreControllerExt on AppController {
 }
 
 extension SystemControllerExt on AppController {
-  Future<bool> _ensureInstalledAppAccessConsent() async {
+  Future<void> _showInstalledAppAccessInfoIfNeeded() async {
     if (!system.isAndroid) {
-      return true;
+      return;
     }
 
-    final consent = await preferences.getInstalledAppAccessConsent();
-    if (consent != null) {
-      return consent;
+    if (_ref.read(packagesProvider).isNotEmpty) {
+      return;
     }
 
-    final allowAccess = await globalState.showMessage(
-      title: appLocalizations.tip,
+    if (await preferences.getInstalledAppAccessInfoShown()) {
+      return;
+    }
+
+    await globalState.showMessage(
+      title: 'Зачем нужен доступ к приложениям',
+      cancelable: false,
+      confirmText: 'Понятно',
       message: const TextSpan(
         text:
-            'FlClash can use the installed apps list to expand split '
-            'tunneling rules like *.yandex.* before Android VPN starts.\n\n'
-            'This helps keep Russian apps reachable even when they reject VPN '
-            'traffic and also helps the fork stay maintainable for the '
-            'developer.\n\n'
-            'You can skip this. FlClash will continue to start normally, but '
-            'package masks and regular expressions will be ignored until you '
-            'allow access.',
+            'FlClash может использовать список установленных приложений, '
+            'чтобы заранее разворачивать правила раздельного туннелирования '
+            'вроде *.yandex.* до запуска Android VPN.\n\n'
+            'Это нужно, чтобы российские приложения работали стабильнее, '
+            'даже если они не пускают при активном VPN. Кроме того, это '
+            'помогает разработчику поддерживать VPN в работоспособном '
+            'состоянии.',
       ),
     );
-    final resolvedConsent = allowAccess == true;
-    await preferences.setInstalledAppAccessConsent(resolvedConsent);
-    return resolvedConsent;
+    await preferences.setInstalledAppAccessInfoShown(true);
   }
 
   Future<List<Package>> getPackages() async {
     if (_ref.read(isMobileViewProvider)) {
       await Future.delayed(commonDuration);
     }
-    if (!await _ensureInstalledAppAccessConsent()) {
-      return const [];
-    }
     if (_ref.read(packagesProvider).isEmpty) {
+      await _showInstalledAppAccessInfoIfNeeded();
       _ref.read(packagesProvider.notifier).value =
           await app?.getPackages() ?? [];
     }
