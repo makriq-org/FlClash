@@ -792,9 +792,10 @@ extension SetupControllerExt on AppController {
       patchConfig: realPatchConfig,
       onAndroidAccessControlResolved: onAndroidAccessControlResolved,
     );
-    if (system.isAndroid) {
-      preferences.saveShareState(this.sharedState);
-      await service?.syncState(this.sharedState.needSyncSharedState);
+    final resolvedSharedState = system.isAndroid ? this.sharedState : null;
+    if (system.isAndroid && preloadInvoke != null && resolvedSharedState != null) {
+      preferences.saveShareState(resolvedSharedState);
+      await service?.syncState(resolvedSharedState.needSyncSharedState);
     }
     final configFilePath = await appPath.configFilePath;
     final yamlString = await encodeYamlTask(config);
@@ -806,6 +807,10 @@ extension SetupControllerExt on AppController {
     );
     if (message.isNotEmpty) {
       throw message;
+    }
+    if (system.isAndroid && preloadInvoke == null && resolvedSharedState != null) {
+      preferences.saveShareState(resolvedSharedState);
+      await service?.syncState(resolvedSharedState.needSyncSharedState);
     }
     addCheckIp();
   }

@@ -2,6 +2,19 @@
 
 Этот файл используется как источник release notes для GitHub Releases. Для нового релиза добавляйте секцию `## vX.Y.Z` в начало файла, а первые 3-5 bullets формулируйте как короткие пользовательские highlights.
 
+## v0.9.01-pre4
+
+### Android split tunneling: корректное переключение профилей
+
+- Исправлено переключение между профилями с profile-managed split tunneling и профилями без него: Android `VpnService` теперь получает новые runtime rules без зависания на старых списках приложений.
+- При runtime-смене профиля обновление core config и restart Android service теперь происходят в правильном порядке, поэтому соединение больше не падает из-за рассинхрона между новым YAML и старыми `vpnOptions`.
+- Изменение Android `vpnOptions`, включая split tunneling rules, теперь инициирует controlled restart сервиса только тогда, когда это действительно нужно.
+
+### Верификация
+
+- Исправление проверено локально через `flutter analyze` и `flutter test test/common`.
+- GitHub Actions release pipeline публикует prerelease `v0.9.01-pre4` после успешной сборки матрицы платформ.
+
 ## v0.9.01-pre3
 
 ### Android split tunneling: профиль стал источником истины
