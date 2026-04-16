@@ -181,30 +181,16 @@ def build_release_markdown(
     items: list[str],
     technical_notes_url: str | None,
 ) -> str:
-    version = tag[1:] if tag.startswith("v") else tag
-    lines = [f"# FlClash {version}", ""]
+    lines: list[str] = []
 
     if items:
-        lines.extend(["## Что нового", ""])
         lines.extend(f"- {item}" for item in items)
-        lines.append("")
 
     if technical_notes_url:
-        lines.extend(["## Технический changelog", ""])
-        lines.append(
-            f"- Подробные технические изменения и заметки по проверке: [docs/releases/{tag}.md]({technical_notes_url})",
-        )
-        lines.append("")
+        if lines:
+            lines.append("")
+        lines.append(f"Подробнее в [docs/releases/{tag}.md]({technical_notes_url})")
 
-    lines.extend(
-        [
-            "## Загрузка",
-            "",
-            "- Выберите артефакт для своей платформы в блоке Assets ниже.",
-            "- Контрольные суммы `*.sha256` приложены к релизу рядом с бинарниками.",
-            f"- Полная история изменений: [CHANGELOG.md]({repo_url}/blob/main/CHANGELOG.md)",
-        ]
-    )
     return "\n".join(lines).strip() + "\n"
 
 
