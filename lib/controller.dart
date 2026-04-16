@@ -898,43 +898,11 @@ extension CoreControllerExt on AppController {
 }
 
 extension SystemControllerExt on AppController {
-  Future<void> _showInstalledAppAccessInfoIfNeeded() async {
-    if (!system.isAndroid) {
-      return;
-    }
-
-    if (_ref.read(packagesProvider).isNotEmpty) {
-      return;
-    }
-
-    if (await preferences.getInstalledAppAccessInfoShown()) {
-      return;
-    }
-
-    await globalState.showMessage(
-      title: 'Зачем нужен доступ к приложениям',
-      cancelable: false,
-      confirmText: 'Понятно',
-      message: const TextSpan(
-        text:
-            'FlClash может использовать список установленных приложений, '
-            'чтобы заранее разворачивать правила раздельного туннелирования '
-            'вроде *.yandex.* до запуска Android VPN.\n\n'
-            'Это нужно, чтобы российские приложения работали стабильнее, '
-            'даже если они не пускают при активном VPN. Кроме того, это '
-            'помогает разработчику поддерживать VPN в работоспособном '
-            'состоянии.',
-      ),
-    );
-    await preferences.setInstalledAppAccessInfoShown(true);
-  }
-
   Future<List<Package>> getPackages() async {
     if (_ref.read(isMobileViewProvider)) {
       await Future.delayed(commonDuration);
     }
     if (_ref.read(packagesProvider).isEmpty) {
-      await _showInstalledAppAccessInfoIfNeeded();
       _ref.read(packagesProvider.notifier).value =
           await app?.getPackages() ?? [];
     }

@@ -53,7 +53,6 @@ const profilesDirectoryName = 'profiles';
 const localhost = '127.0.0.1';
 const clashConfigKey = 'clash_config';
 const configKey = 'config';
-const installedAppAccessInfoShownKey = 'installed_app_access_info_shown';
 const double dialogCommonWidth = 300;
 const repository = 'makriq-org/FlClash';
 const defaultExternalController = '127.0.0.1:9090';
