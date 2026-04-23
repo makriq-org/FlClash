@@ -172,7 +172,7 @@ def build_technical_notes_url(
         relative_path = notes_path.resolve().relative_to(repo_root.resolve())
     except ValueError:
         relative_path = Path("docs/releases") / f"{tag}.md"
-    return f"{repo_url}/blob/main/{relative_path.as_posix()}"
+    return f"{repo_url}/blob/{tag}/{relative_path.as_posix()}"
 
 
 def build_release_markdown(

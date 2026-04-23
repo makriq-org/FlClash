@@ -1,4 +1,4 @@
-name: сборка-релиза
+name: android-релиз
 
 on:
   push:
@@ -25,34 +25,10 @@ jobs:
 
   build:
     needs: [ release-notes-guard ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - platform: android
-            os: ubuntu-latest
-          - platform: windows
-            os: Windows-2022
-            arch: amd64
-          - platform: linux
-            os: ubuntu-22.04
-            arch: amd64
-          - platform: macos
-            os: macos-15-intel
-            arch: amd64
-          - platform: macos
-            os: macos-latest
-            arch: arm64
-          #          - platform: windows
-          #            os: windows-11-arm
-          #            arch: arm64
-          - platform: linux
-            os: ubuntu-24.04-arm
-            arch: arm64
+    runs-on: ubuntu-latest
 
     steps:
       - name: Определить Android NDK
-        if: startsWith(matrix.platform,'android')
         run: |
           latest_ndk="$(find "${ANDROID_HOME}/ndk" -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)"
           if [ -z "${latest_ndk}" ]; then
@@ -61,21 +37,13 @@ jobs:
           fi
           echo "ANDROID_NDK=${latest_ndk}" >> "${GITHUB_ENV}"
 
-      - name: Настроить Rust
-        if: startsWith(matrix.os, 'windows-11-arm')
-        run: |
-          Invoke-WebRequest -Uri "https://win.rustup.rs/aarch64" -OutFile rustup-init.exe
-          .\rustup-init.exe -y --default-toolchain stable
-          $cargoPath = "$env:USERPROFILE\.cargo\bin"
-          Add-Content $env:GITHUB_PATH $cargoPath
-
       - name: Получить код
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Настроить подпись Android
-        if: startsWith(matrix.platform,'android') && env.KEYSTORE_B64 != ''
+        if: env.KEYSTORE_B64 != ''
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE }}
           KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
@@ -88,7 +56,7 @@ jobs:
           echo "keyPassword=${KEY_PASSWORD_VALUE}" >> android/local.properties
 
       - name: Проверить подпись Android для стабильного релиза
-        if: startsWith(matrix.platform,'android') && env.IS_STABLE == 'true'
+        if: env.IS_STABLE == 'true'
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE }}
           KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
@@ -108,17 +76,9 @@ jobs:
             core/go.sum
 
       - name: Настроить Flutter
-        if: ${{ !(startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')) }}
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.35.7
-          cache: true
-      - name: Настроить Flutter для альтернативной среды
-        if: startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')
-        uses: subosito/flutter-action@v2
-        with:
-          channel: master
           flutter-version: 3.35.7
           cache: true
 
@@ -131,16 +91,15 @@ jobs:
         run: flutter analyze lib test setup.dart
 
       - name: Запустить Android-регрессионные тесты
-        if: startsWith(matrix.platform,'android')
         run: flutter test test/common
 
-      - name: Подготовить сборку
-        run: dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
+      - name: Собрать Android-артефакты
+        run: dart setup.dart android ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
 
-      - name: Загрузить артефакты
+      - name: Загрузить Android-артефакты
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) }}
+          name: android-dist
           path: ./dist
           overwrite: true
 
@@ -159,8 +118,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./dist/
-          pattern: artifact-*
-          merge-multiple: true
+          name: android-dist
 
       - name: Сформировать release notes
         run: |
@@ -183,7 +141,7 @@ jobs:
       - name: Опубликовать релиз
         uses: softprops/action-gh-release@v2
         with:
-          name: FlClash ${{ github.ref_name }}
+          name: FlClash Android ${{ github.ref_name }}
           prerelease: ${{ env.IS_STABLE != 'true' }}
           files: ./dist/*
           body_path: './release.md'

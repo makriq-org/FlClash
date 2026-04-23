@@ -24,15 +24,16 @@ body:
       description: Опишите, где и зачем нужна эта функция
     validations:
       required: true
-  - type: checkboxes
-    id: os-labels
+  - type: dropdown
+    id: feature-area
     attributes:
-      label: Целевые платформы
-      description: Выберите платформы, к которым относится запрос
+      label: Область Android-функции
+      description: Выберите ближайшее направление запроса
       options:
-        - label: Android
-        - label: Windows
-        - label: MacOS
-        - label: Linux
+        - Android VPN hardening
+        - Android split tunneling
+        - Android UX и настройки
+        - Обход блокировок / ByeByeDPI
+        - Другое Android-направление
     validations:
       required: true

@@ -8,89 +8,70 @@
 
 [![Downloads](https://img.shields.io/github/downloads/makriq-org/FlClash/total?style=flat-square&logo=github)](https://github.com/makriq-org/FlClash/releases/)[![Last Version](https://img.shields.io/github/release/makriq-org/FlClash/all.svg?style=flat-square)](https://github.com/makriq-org/FlClash/releases/)[![License](https://img.shields.io/github/license/makriq-org/FlClash?style=flat-square)](LICENSE)
 
-Независимая продуктовая линия FlClash, которую сопровождает `makriq`. Репозиторий собран как самостоятельный источник правды для продукта, документации и релизов без зависимости на инфраструктуру апстрима.
+Android-first форк FlClash, который `makriq` развивает как самостоятельный продукт для Android VPN hardening, безопасных релизов и будущих сетевых функций вроде встроенного ByeByeDPI.
 
-## Что здесь поддерживается
+Репозиторий больше не позиционируется как кроссплатформенный продукт. В дереве всё ещё могут оставаться унаследованные desktop-компоненты апстрима, но они считаются legacy-слоем: не входят в публичный scope форка, не описываются как поддерживаемые и не участвуют в релизном контуре.
 
-- самостоятельные мультиплатформенные релизы из этого репозитория;
-- Android-ориентированный контур приватности и защиты VPN;
-- документация по ограничениям, безопасности и операционному процессу;
-- предсказуемый release flow без ручной сборки changelog на лету.
+## Фокус форка
 
-## Принципы сопровождения
+- устранять практические Android VPN-утечки и делать безопасные дефолты нормой;
+- развивать Android-специфичные функции, которые имеют смысл именно для мобильного клиента;
+- держать документацию, релизы и технические решения внутри этого репозитория;
+- готовить основу для следующих Android-возможностей, включая встроенный ByeByeDPI.
 
-- `main` остаётся основной веткой продукта.
-- Стабильные релизы публикуются тегами `v*`, а предрелизы выпускаются отдельными `v*-pre*` тегами.
-- Release notes собираются из верхней секции `CHANGELOG.md`, без автокоммитов шума обратно в репозиторий.
-- Веточные Android-артефакты доступны отдельно через GitHub Actions.
+## Что уже сделано
+
+В hardened Android VPN-режиме этот форк уже закрывает и ограничивает такие client-side поверхности:
+
+- локальные `mixed` / `socks` / `http` listeners;
+- доступный с localhost `external-controller`;
+- публикацию Android system proxy;
+- стабильные, легко узнаваемые параметры туннеля.
+
+Дополнительно форк восстанавливает корректную доменную маршрутизацию на усиленном TUN-пути и умеет принимать split tunneling по приложениям прямо из профиля через:
+
+- `tun.exclude-package` и `tun.include-package`;
+- `tun.exclude-package-file` и `tun.include-package-file`;
+- `tun.exclude-package-url` и `tun.include-package-url`;
+- маски, `re:`-регулярные выражения и `!`-исключения внутри списков пакетов.
+
+Важно: цель форка в том, чтобы сократить клиентские признаки и устранить утечки, которые приложение создаёт само. Форк не заявляет о полном сокрытии Android VPN от публичных API без root/Xposed/LSPosed.
 
 ## Документация
 
 - [Исследование защиты Android VPN](docs/android-vpn-hardening.md)
 - [Раздельное туннелирование Android через профиль](docs/android-profile-split-tunneling.md)
+- [Процесс Android-релизов](docs/releasing.md)
+- [Политика сопровождения и коммитов](CONTRIBUTING.md)
 - [Политика безопасности](SECURITY.md)
 - [План развития](ROADMAP.md)
 - [Журнал изменений](CHANGELOG.md)
-- [Процесс релизов](docs/releasing.md)
 
-## Скриншоты
+## Интерфейс
 
-Десктоп:
-<p style="text-align: center;">
-    <img alt="desktop" src="snapshots/desktop.gif">
-</p>
-
-Мобильная версия:
 <p style="text-align: center;">
     <img alt="mobile" src="snapshots/mobile.gif">
 </p>
 
-## Ключевые особенности
-
-- Поддержка нескольких платформ: Android, Windows, macOS, Linux
-- Flutter-интерфейс с Clash-совместимым рабочим сценарием
-- Синхронизация через WebDAV
-- Поддержка подписок
-- Дополнительное усиление защиты Android VPN для чувствительных к приватности сценариев
-
-## Что уже сделано для Android VPN
-
-В Android VPN-режиме этот форк теперь закрывает такие клиентские пути утечки, как:
-
-- локальные `mixed` / `socks` / `http` listeners,
-- доступный с localhost `external-controller`,
-- публикация Android system proxy,
-- стабильные, легко узнаваемые параметры туннеля.
-
-Текущая модель усиления защиты также восстанавливает корректную доменную маршрутизацию на усиленном TUN-пути, поэтому правила прямой маршрутизации Android продолжают работать без повторного открытия исходной localhost-утечки.
-
-Профиль теперь также может управлять Android split tunneling по приложениям: `tun.exclude-package` исключает выбранные приложения из VPN целиком, `tun.include-package` делает обратный режим, а внутри этих списков можно смешивать точные package names, маски вроде `*.yandex.*`, регулярные выражения через `re:` и исключения через `!`. Поля `tun.exclude-package-file` / `tun.include-package-file` позволяют вынести такие правила в отдельные файлы, а `tun.exclude-package-url` / `tun.include-package-url` умеют забирать их по прямой ссылке, включая GitHub Raw.
-
-Важно: этот форк уменьшает то, что клиент раскрывает сам по себе. Он не заявляет о полном сокрытии VPN от публичных Android API без root/Xposed.
-
 ## Сборка
 
-1. Обновите submodules
+1. Обновите submodules.
 
    ```bash
    git submodule update --init --recursive
    ```
 
-2. Установите `Flutter` и `Go`
+2. Установите `Flutter`, `Go`, `Android SDK` и `Android NDK`.
 
-3. Для Android-сборок установите `Android SDK` и `Android NDK`
-
-4. Соберите нужную платформу:
+3. Соберите Android-артефакты.
 
    ```bash
    dart setup.dart android
-   dart setup.dart windows --arch amd64
-   dart setup.dart linux --arch amd64
-   dart setup.dart macos --arch arm64
    ```
 
 ## Релизы
 
-- Веточные Android-артефакты: GitHub Actions `android-веточная-сборка`
-- Стабильный мультиплатформенный релиз: push тега `v*`
-- Release notes и краткие обновления собираются из `CHANGELOG.md`, поэтому достаточно поддерживать в актуальном состоянии только верхнюю секцию под новый тег.
+- Веточные Android-артефакты публикует GitHub Actions workflow `android-веточная-сборка`.
+- Теги `v*` публикуют стабильные Android-релизы, а `v*-preN` создают Android prerelease.
+- Публичные release notes собираются из верхней секции `CHANGELOG.md`.
+- Подробные технические заметки по релизу при необходимости живут в `docs/releases/`.

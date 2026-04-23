@@ -1,5 +1,5 @@
 name: fl_clash
-description: Независимый релиз FlClash от makriq с упором на защиту Android и улучшенное обновление приложения.
+description: Android-first форк FlClash от makriq с упором на VPN hardening, безопасные Android-релизы и будущие Android-функции.
 publish_to: 'none'
 version: 0.9.1+2026042301
 environment:

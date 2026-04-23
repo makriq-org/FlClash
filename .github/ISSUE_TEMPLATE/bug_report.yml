@@ -23,26 +23,22 @@ body:
       description: Укажите точную версию FlClash
     validations:
       required: true
+  - type: input
+    attributes:
+      label: Устройство
+      description: Укажите модель устройства и, если нужно, вендорскую оболочку
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Шаги для воспроизведения
       description: Опишите шаги, с помощью которых можно воспроизвести проблему
     validations:
       required: true
-  - type: dropdown
-    attributes:
-      label: Операционная система
-      options:
-        - Android
-        - Windows
-        - MacOS
-        - Linux
-    validations:
-      required: true
   - type: input
     attributes:
-      label: Версия ОС
-      description: Укажите версию системы, а для Linux дополнительно рабочее окружение и оконную систему
+      label: Версия Android
+      description: Укажите версию Android, номер прошивки и, если есть, состояние root/LSPosed
     validations:
       required: true
   - type: textarea
