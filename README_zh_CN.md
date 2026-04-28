@@ -4,13 +4,11 @@
 
 </div>
 
-## FlClash Hardened
+## FlClash
 
 [![Downloads](https://img.shields.io/github/downloads/makriq3/FlClash/total?style=flat-square&logo=github)](https://github.com/makriq3/FlClash/releases/)[![Last Version](https://img.shields.io/github/release/makriq3/FlClash/all.svg?style=flat-square)](https://github.com/makriq3/FlClash/releases/)[![License](https://img.shields.io/github/license/makriq3/FlClash?style=flat-square)](LICENSE)
 
-[![Channel](https://img.shields.io/badge/Telegram-Channel-blue?style=flat-square&logo=telegram)](https://t.me/FlClash)
-
-这是一个面向 Android 隐私加固的 FlClash 分支，重点在于减少 localhost 泄漏、关闭高风险默认项，并让发布流程独立于上游仓库。
+这是由 `makriq3` 独立维护的 FlClash 发布线，重点在于 Android 隐私加固、更顺手的更新体验，以及完全由本仓库掌控的发布流程。
 
 - 研究文档: [docs/android-vpn-hardening.md](docs/android-vpn-hardening.md)
 - 安全策略: [SECURITY.md](SECURITY.md)
@@ -54,11 +52,11 @@ on Mobile:
 支持下列操作
 
    ```bash
-    com.follow.clash.action.START
+    com.makriq.flclash.action.START
     
-    com.follow.clash.action.STOP
+    com.makriq.flclash.action.STOP
     
-    com.follow.clash.action.TOGGLE
+    com.makriq.flclash.action.TOGGLE
    ```
 
 ## Download
@@ -120,6 +118,12 @@ on Mobile:
            dart .\setup.dart macos --arch <arm64 | amd64>
            ```
 
-## Upstream
+## 方向
 
-本仓库起源于 [chen08209/FlClash](https://github.com/chen08209/FlClash)，原项目及其跨平台基础能力的工作应完整归功于上游作者。
+本仓库作为独立发布线持续维护，逐步建设自己的：
+
+- Android 隐私加固策略
+- 应用标识与打包元数据
+- 发布流水线
+- 安全文档
+- 产品路线图

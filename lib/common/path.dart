@@ -101,6 +101,15 @@ class AppPath {
     return join(directory.path, 'shared_preferences.json');
   }
 
+  Future<String> get updatesDirPath async {
+    final directory = await cacheDir.future;
+    return join(directory.path, 'updates');
+  }
+
+  Future<String> getUpdateFilePath(String fileName) async {
+    return join(await updatesDirPath, fileName);
+  }
+
   Future<String> get profilesPath async {
     final directory = await dataDir.future;
     return join(directory.path, profilesDirectoryName);

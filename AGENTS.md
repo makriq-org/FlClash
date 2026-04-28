@@ -218,8 +218,245 @@
   - if non-empty, it adds only those routes
   - if empty, it falls back to `addRoute(0.0.0.0, 0)` and `addRoute(::, 0)`
 - Current `SharedState` construction does **not** populate `VpnOptions.routeAddress`:
+
+### Update Mechanism Research (2026-04-12)
+
+- Current app update UX is only a release check plus external redirect:
+  - release check hits `https://api.github.com/repos/$repository/releases/latest`
+  - source: `lib/common/request.dart`
+  - user flow shows a dialog with release notes, then opens `https://github.com/$repository/releases/latest`
+  - source: `lib/controller.dart`
+  - manual entry point exists in About screen:
+    - `lib/views/about.dart`
+- Current release source inside code is still **upstream**, not the fork:
+  - `const repository = 'chen08209/FlClash'`
+  - source: `lib/common/constant.dart`
+- Consequence:
+  - this fork already has its own release channel, but the app still looks at upstream releases.
+  - current fork users will not get correct fork updates until the release source is switched or abstracted.
+
+- Verified live release state at research time:
+  - fork `makriq3/FlClash` latest release:
+    - tag: `v0.8.93`
+    - published: `2026-04-12`
+    - release page: `https://github.com/makriq3/FlClash/releases/tag/v0.8.93`
+  - upstream `chen08209/FlClash` latest release:
+    - tag: `v0.8.92`
+    - published: `2026-02-02`
+    - release page: `https://github.com/chen08209/FlClash/releases/tag/v0.8.92`
+- Practical implication:
+  - the fork is already newer than upstream.
+  - keeping the hardcoded upstream repository breaks any future user-facing update story for this fork.
+
+- Android release artifacts are already suitable for ABI-aware self-update:
+  - Android packaging is split per ABI via `split-per-abi`.
+  - source: `setup.dart`
+  - current release assets include:
+    - `FlClash-<version>-android-arm64-v8a.apk`
+    - `FlClash-<version>-android-armeabi-v7a.apk`
+    - `FlClash-<version>-android-x86_64.apk`
+    - matching `.sha256` files
+  - fork release page currently exposes `Assets 24`, so Android APKs and checksum files are already part of the existing release pipeline.
+
+- CI / release pipeline facts relevant to updates:
+  - stable multi-platform releases are created only from tag push `v*`:
+    - `.github/workflows/build.yaml`
+  - the workflow already computes and uploads `.sha256` files for release assets.
+  - branch/manual Android verification exists separately:
+    - `.github/workflows/android-branch-build.yml`
+  - this matches the desired workflow of:
+    - heavy build in GitHub Actions,
+    - single batched APK verification on device.
+
+- Android app install support is **not implemented yet**:
+  - Flutter side already declares:
+    - `app.openFile(path)`
+    - `app.requestNotificationsPermission()`
+    - source: `lib/plugins/app.dart`
+  - Android `AppPlugin` method channel currently handles:
+    - `moveTaskToBack`
+    - `updateExcludeFromRecents`
+    - `initShortcuts`
+    - `getPackages`
+    - `getChinaPackageNames`
+    - `getPackageIcon`
+    - `tip`
+  - It does **not** handle:
+    - `openFile`
+    - `requestNotificationsPermission` as a direct Flutter method call
+  - source: `android/app/src/main/kotlin/com/follow/clash/plugins/AppPlugin.kt`
+- Consequence:
+  - even a basic "download APK and open installer" flow is currently missing in Android native code.
+
+- Android manifest is not yet prepared for robust in-app APK install flow:
+  - current manifest has no `REQUEST_INSTALL_PACKAGES` permission.
+  - current manifest has no `FileProvider`.
+  - no provider XML path config was found.
+  - source: `android/app/src/main/AndroidManifest.xml`
+- Consequence:
+  - safe installer launch through `content://` URI is not wired yet.
+  - unknown-app-source permission flow is not wired yet.
+
+- Official Android platform constraints for non-Play self-update:
+  - Android allows releasing APKs from a website / direct link, including own server or GitHub-style distribution.
+  - users must opt in to installs from unknown sources.
+  - on Android 8.0+ this permission is granted per-source app.
+  - sources that install unknown apps should check `canRequestPackageInstalls()`.
+  - Android docs reference:
+    - `Publish your app`
+    - `PackageManager.canRequestPackageInstalls()`
+- This means:
+  - a good GitHub-release updater is feasible,
+  - but first install and sometimes re-enabled permission will still require a system permission screen.
+
+- Official Android platform constraints for accepted app updates:
+  - update must keep the same `applicationId`.
+  - update must keep the same signing certificate, or valid proof-of-rotation.
+  - update must have same-or-higher `versionCode`.
+  - Android docs reference:
+    - `How app updates work`
+- Repository-specific implication:
+  - release signing key stability is mandatory for seamless updates in this fork.
+  - if release signing secrets are absent, current Gradle config falls back to debug signing and adds `.dev` applicationId suffix even for release build:
+    - source: `android/app/build.gradle.kts`
+  - such builds are fine for test artifacts, but they are **not** valid upgrade targets for production users.
+
+- Google Play in-app updates are not the right primary mechanism for the current distribution model:
+  - Play can update only apps published on Google Play, with matching app id / signing, and present in the user's library.
+  - current FlClash fork distribution is GitHub Releases, not Play.
+  - so the realistic mechanism here is a fork-owned self-updater based on GitHub Releases, not Play Core.
+
+- Existing app capabilities that help implement a good updater:
+  - `device_info_plus` is already included, so ABI / SDK-aware asset selection can be implemented without adding a new heavy dependency.
+  - `dio` is already included and suitable for download with progress.
+  - app paths already expose:
+    - downloads directory
+    - temporary directory
+    - cache directory
+  - sources:
+    - `lib/common/system.dart`
+    - `lib/common/path.dart`
+
+- Recommended product direction based on current facts:
+  - Android update UX should become:
+    - app checks fork release channel,
+    - app selects correct APK for current ABI,
+    - app downloads inside the app with progress,
+    - app verifies checksum,
+    - app opens system installer,
+    - app guides user only when Android requires unknown-source permission.
+  - This removes:
+    - manual GitHub browsing,
+    - platform selection by the user,
+    - checksum ambiguity,
+    - most chances to install the wrong asset.
+  - Remaining unavoidable user action:
+  - final confirmation in Android package installer,
+  - and one-time / occasional unknown-source permission grant on Android 8+.
+
+### Implemented Android Self-Update Direction (2026-04-12)
+
+- The client is now being reoriented to the fork release channel:
+  - `repository` should point to `makriq3/FlClash`, not upstream.
+  - this affects:
+    - update checks
+    - About -> Project link
+    - release page fallback links
+
+- The intended Android update flow in this fork is:
+  - check latest fork release through GitHub API
+  - detect current device ABI on Android
+  - select the matching split APK asset automatically
+  - download APK in-app
+  - verify SHA-256 before install
+  - launch Android package installer directly from the app
+  - fall back to the release page only on failure
+
+- Artifact selection rules:
+  - use release assets already produced by `split-per-abi`
+  - prefer ABI in the device-reported order from `supportedAbis`
+  - current expected asset names include:
+    - `arm64-v8a`
+    - `armeabi-v7a`
+    - `x86_64`
+  - if no compatible APK is found, surface a user-facing error instead of asking the user to choose manually
+
+- Integrity verification rules:
+  - prefer GitHub release asset `digest` when available
+  - otherwise fetch the matching `.apk.sha256` sidecar asset
+  - verify the downloaded APK before invoking the installer
+  - keep the downloaded APK in app cache so the user does not need to redownload on every retry
+
+- Android native integration needed for this mechanism:
+  - `REQUEST_INSTALL_PACKAGES` in manifest
+  - `FileProvider` in manifest
+  - XML provider paths for cache/files download handoff
+  - Flutter method-channel handler for `openFile(path)` on Android
+  - APK-specific launch path should use the Android package installer rather than plain browser redirect
+
+- CI / release assumptions for the updater to remain valid:
+  - stable Android releases must always be signed with the fork release key
+  - unsigned / debug-signed artifacts are acceptable only for branch testing, not for production updates
+  - branch GitHub Actions builds should use signing secrets when available so device validation artifacts stay representative of real upgrade builds
+
+- Validation target for this feature:
+  - no manual ABI/platform selection by the user
+  - no need to browse GitHub releases manually during normal upgrade
+  - one in-app flow should cover:
+    - discovery
+    - download
+    - checksum verification
+    - installer handoff
+  - remaining user action is only the unavoidable Android system install confirmation / unknown-source approval
+
+- First CI failure during self-update implementation:
+  - branch workflow run `24305718946` failed in `Run Android Regression Tests`
+  - failure cause was not updater logic itself, but compile mismatches in the new dialog:
+    - missing import for `TrafficShowExt` from `lib/models/common.dart`
+    - missing import for `CommonDialog` from `lib/widgets/dialog.dart`
+    - used nonexistent localization key `close` instead of existing `cancel`
+  - fix was applied directly in `lib/widgets/update_dialog.dart` before rerunning Actions
   - `lib/providers/state.dart` builds `VpnOptions(...)` without `routeAddress`
-- Practical consequence:
+
+### Standalone Product Rebrand And Release Independence (2026-04-12)
+
+- The fork is now being converted from "privacy fork with upstream-era identifiers" into a standalone release line owned by `makriq`.
+- Product identifier changes applied:
+  - Android app / module namespace moved from `com.follow.clash` to `com.makriq.flclash`
+  - macOS bundle identifiers moved to `com.makriq.flclash`
+  - Linux desktop application id moved to `com.makriq.flclash`
+  - Dart-side `packageName` constant now matches the new namespace
+- Android source migration was not just `applicationId`:
+  - Kotlin package declarations had to move under new filesystem paths in:
+    - `android/app`
+    - `android/common`
+    - `android/core`
+    - `android/service`
+  - AIDL package paths also had to be moved to `com/makriq/flclash/...`
+- Release independence findings:
+  - old Android release flow still depended on Firebase / `google-services.json`
+  - after package rename, that would have blocked stable tagged releases unless a new Firebase app was provisioned
+  - to keep releases self-owned and immediately operable, Firebase / Crashlytics integration was removed from Android Gradle and CI setup
+  - stable Android release now depends only on keystore + signing credentials, not on `SERVICE_JSON`
+- User-facing upstream traces removed from product surface:
+  - About screen no longer links to upstream Telegram / upstream core page
+  - packaging metadata now publishes under `makriq`
+  - release helper URLs point to `makriq3/FlClash`
+  - public README files now describe the repo as an independent release line rather than an upstream-facing fork
+- Dependency independence improvement:
+  - `flutter_js` and `yaml_writer` were moved from upstream-owned GitHub git refs to neutral `pub.dev` packages
+- Verification:
+  - branch run `24313374852` (`Rebrand app identifiers for standalone release`) passed
+  - result:
+    - `Run Android Regression Tests` passed
+    - `Build Android Artifacts` passed
+    - `Upload Android Artifact` passed
+  - this validates:
+    - new namespace/package migration,
+    - removal of Firebase release coupling,
+    - updated dependency sources,
+    - continued branch Android build viability in GitHub Actions
+  - Practical consequence:
   - Android service receives an empty route list even when final Clash config contains a non-empty `tun.route-address`
   - system VPN routing and core TUN config can therefore diverge
 
@@ -335,3 +572,48 @@
   - `CHANGELOG.md`
   - `docs/android-vpn-hardening.md`
   - `README.md`
+- Release workflow fan-out observed after merge/tag push:
+  - `android-branch-build` ran for the last two branch commits on `codex/android-routing-regression-fix`,
+  - another `android-branch-build` ran on `main` after merge,
+  - `build` ran for tag `v0.8.94`.
+- The branch-only in-progress runs that were not needed after merge were explicitly cancelled:
+  - Actions run `24304867441` (`Prepare v0.8.94 release notes`)
+  - Actions run `24304783943` (`Expand Android hardening regression coverage`)
+- The intended runs to keep after release are:
+  - `android-branch-build` on `main`
+  - `build` for release tag `v0.8.94`
+
+### Production Cleanup Follow-Up And Runtime Namespace Risk (2026-04-12)
+
+- After the standalone rebrand landed, one more Android runtime risk was identified before the next release:
+  - `android/core/src/main/cpp/core.cpp` still exported JNI symbols under `Java_com_follow_clash_core_Core_*`
+  - Java/Kotlin packages had already moved to `com.makriq.flclash.core`
+  - build validation could still pass because the native library compiles, but Android runtime native method binding would fail once the renamed `Core` class invoked those methods
+- Fixes applied for the production release line:
+  - updated all native JNI export names in `android/core/src/main/cpp/core.cpp` to `Java_com_makriq_flclash_core_Core_*`
+  - updated `JNI_OnLoad` class lookups from `com/follow/clash/core/*` to `com/makriq/flclash/core/*`
+  - removed the last old Windows vendor metadata from `windows/runner/Runner.rc` (`CompanyName`, `InternalName`, `ProductName`, copyright)
+  - removed now-unused Firebase entries from `android/gradle/libs.versions.toml` after the product line was decoupled from Google Services
+  - normalized leftover user-facing localization strings so product text no longer references Firebase Crashlytics directly
+- Verification notes:
+  - repo-wide search outside `AGENTS.md` no longer returns `com.follow`, `chen08209/FlClash`, `follow/clash`, or `Firebase Crashlytics`
+  - local Flutter/Dart execution is still unavailable in the workstation environment, so release verification continues through GitHub Actions
+- Release signing follow-up:
+  - first post-cleanup `android-branch-build` run on `main` failed during `Build Android Artifacts` even though tests were green
+  - root cause was repository secret mismatch for the Android release keystore:
+    - Gradle reported `keystore password was incorrect`
+    - the fork uses a PKCS12 keystore, and `KEY_PASSWORD` needed to match `STORE_PASSWORD` for this signing setup
+  - repository secrets were re-uploaded from the local keystore backup with aligned values:
+    - `KEYSTORE`
+    - `KEY_ALIAS`
+    - `STORE_PASSWORD`
+    - `KEY_PASSWORD`
+- Final verification before release:
+  - `android-branch-build` run `24313864713`, attempt `2`, completed successfully on commit `a565f2d`
+  - the successful run covered:
+    - Android signing setup
+    - Android regression tests
+    - full Android artifact build
+    - artifact upload
+- Release intent updated:
+  - supersede failed `v0.8.95` with `v0.8.96` after production cleanup and runtime namespace correction

@@ -182,9 +182,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "coreStatus": MessageLookupByLibrary.simpleMessage("コアステータス"),
     "country": MessageLookupByLibrary.simpleMessage("国"),
     "crashTest": MessageLookupByLibrary.simpleMessage("クラッシュテスト"),
-    "crashlytics": MessageLookupByLibrary.simpleMessage("クラッシュ分析"),
+    "crashlytics": MessageLookupByLibrary.simpleMessage("クラッシュレポート"),
     "crashlyticsTip": MessageLookupByLibrary.simpleMessage(
-      "有効にすると、アプリがクラッシュした際に機密情報を含まないクラッシュログを自動的にアップロードします",
+      "有効にすると、アプリがクラッシュした際に機密情報を含まないクラッシュレポートを自動送信します",
     ),
     "create": MessageLookupByLibrary.simpleMessage("作成"),
     "creationTime": MessageLookupByLibrary.simpleMessage("作成時間"),
@@ -192,7 +192,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dark": MessageLookupByLibrary.simpleMessage("ダーク"),
     "dashboard": MessageLookupByLibrary.simpleMessage("ダッシュボード"),
     "dataCollectionContent": MessageLookupByLibrary.simpleMessage(
-      "本アプリはFirebase Crashlyticsを使用してクラッシュ情報を収集し、アプリの安定性を向上させます。\n収集されるデータにはデバイス情報とクラッシュ詳細が含まれますが、個人の機密データは含まれません。\n設定でこの機能を無効にすることができます。",
+      "本アプリは安定性向上のためにクラッシュ情報を収集する場合があります。\n収集されるデータにはデバイス情報やクラッシュ詳細が含まれる場合がありますが、個人の機密データは含まれません。\nこの機能は設定で無効にできます。",
     ),
     "dataCollectionTip": MessageLookupByLibrary.simpleMessage("データ収集説明"),
     "days": MessageLookupByLibrary.simpleMessage("日"),
@@ -294,6 +294,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "getOriginRules": MessageLookupByLibrary.simpleMessage("元のルールを取得"),
     "global": MessageLookupByLibrary.simpleMessage("グローバル"),
     "go": MessageLookupByLibrary.simpleMessage("移動"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "ダウンロードしてインストール",
+    ),
     "goDownload": MessageLookupByLibrary.simpleMessage("ダウンロードへ"),
     "goToConfigureScript": MessageLookupByLibrary.simpleMessage("スクリプト設定に移動"),
     "hasCacheChange": MessageLookupByLibrary.simpleMessage("変更をキャッシュしますか？"),
@@ -637,6 +640,32 @@ class MessageLookup extends MessageLookupByLibrary {
     "unknownNetworkError": MessageLookupByLibrary.simpleMessage("不明なネットワークエラー"),
     "unnamed": MessageLookupByLibrary.simpleMessage("無題"),
     "update": MessageLookupByLibrary.simpleMessage("更新"),
+    "updateChecksumMismatch": MessageLookupByLibrary.simpleMessage(
+      "ダウンロードしたパッケージがSHA-256検証に失敗しました",
+    ),
+    "updateChecksumUnavailable": MessageLookupByLibrary.simpleMessage(
+      "更新パッケージのチェックサムを検証できません",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "更新をダウンロード中",
+    ),
+    "updateFailed": MessageLookupByLibrary.simpleMessage("更新に失敗しました"),
+    "updateInstallerError": MessageLookupByLibrary.simpleMessage(
+      "Androidインストーラーを開けませんでした",
+    ),
+    "updateInstallerOpened": MessageLookupByLibrary.simpleMessage(
+      "インストーラーを開きました。Androidで更新を確認してください。",
+    ),
+    "updateNoCompatiblePackage": MessageLookupByLibrary.simpleMessage(
+      "この端末に対応するAndroidパッケージが見つかりませんでした",
+    ),
+    "updateOpeningInstaller": MessageLookupByLibrary.simpleMessage(
+      "インストーラーを開いています",
+    ),
+    "updatePreparing": MessageLookupByLibrary.simpleMessage("更新を準備中"),
+    "updateVerifying": MessageLookupByLibrary.simpleMessage(
+      "パッケージを検証中",
+    ),
     "upload": MessageLookupByLibrary.simpleMessage("アップロード"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URL経由でプロファイルを取得"),

@@ -7,6 +7,7 @@ import 'package:fl_clash/plugins/app.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/dialog.dart';
+import 'package:fl_clash/widgets/update_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -57,7 +58,6 @@ extension InitControllerExt on AppController {
     }
     await _handleFailedPreference();
     await _handlerDisclaimer();
-    await _showCrashlyticsTip();
     await _connectCore();
     await _initCore();
     await _initStatus();
@@ -104,23 +104,6 @@ extension InitControllerExt on AppController {
         false;
   }
 
-  Future<void> _showCrashlyticsTip() async {
-    if (!system.isAndroid) {
-      return;
-    }
-    if (_ref.read(appSettingProvider.select((state) => state.crashlyticsTip))) {
-      return;
-    }
-    await globalState.showMessage(
-      title: appLocalizations.dataCollectionTip,
-      cancelable: false,
-      message: TextSpan(text: appLocalizations.dataCollectionContent),
-    );
-    _ref
-        .read(appSettingProvider.notifier)
-        .update((state) => state.copyWith(crashlyticsTip: true));
-  }
-
   Future<void> _handlerDisclaimer() async {
     if (_ref.read(
       appSettingProvider.select((state) => state.disclaimerAccepted),
@@ -163,18 +146,16 @@ extension InitControllerExt on AppController {
   }
 
   Future<void> checkUpdateResultHandle({
-    Map<String, dynamic>? data,
+    AppRelease? data,
     bool isUser = false,
   }) async {
     if (data != null) {
-      final tagName = data['tag_name'];
-      final body = data['body'];
-      final submits = utils.parseReleaseBody(body);
+      final submits = utils.parseReleaseBody(data.body);
       final textTheme = _context.textTheme;
       final res = await globalState.showMessage(
         title: appLocalizations.discoverNewVersion,
         message: TextSpan(
-          text: '$tagName \n',
+          text: '${data.tagName} \n',
           style: textTheme.headlineSmall,
           children: [
             TextSpan(text: '\n', style: textTheme.bodyMedium),
@@ -182,11 +163,20 @@ extension InitControllerExt on AppController {
               TextSpan(text: '- $submit \n', style: textTheme.bodyMedium),
           ],
         ),
-        confirmText: appLocalizations.goDownload,
+        confirmText: system.isAndroid
+            ? appLocalizations.downloadAndInstall
+            : appLocalizations.goDownload,
         cancelText: isUser ? null : appLocalizations.noLongerRemind,
       );
       if (res == true) {
-        launchUrl(Uri.parse('https://github.com/$repository/releases/latest'));
+        if (system.isAndroid) {
+          await globalState.showCommonDialog(
+            dismissible: false,
+            child: AndroidUpdateDialog(release: data),
+          );
+        } else {
+          launchUrl(Uri.parse(data.htmlUrl));
+        }
       } else if (!isUser && res == false) {
         _ref
             .read(appSettingProvider.notifier)

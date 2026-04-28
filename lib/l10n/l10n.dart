@@ -1129,6 +1129,116 @@ class AppLocalizations {
     );
   }
 
+  /// `Download and install`
+  String get downloadAndInstall {
+    return Intl.message(
+      'Download and install',
+      name: 'downloadAndInstall',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Preparing update`
+  String get updatePreparing {
+    return Intl.message(
+      'Preparing update',
+      name: 'updatePreparing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Downloading update`
+  String get updateDownloading {
+    return Intl.message(
+      'Downloading update',
+      name: 'updateDownloading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Verifying package`
+  String get updateVerifying {
+    return Intl.message(
+      'Verifying package',
+      name: 'updateVerifying',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Opening installer`
+  String get updateOpeningInstaller {
+    return Intl.message(
+      'Opening installer',
+      name: 'updateOpeningInstaller',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Installer opened. Confirm the update in Android.`
+  String get updateInstallerOpened {
+    return Intl.message(
+      'Installer opened. Confirm the update in Android.',
+      name: 'updateInstallerOpened',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unable to open Android installer`
+  String get updateInstallerError {
+    return Intl.message(
+      'Unable to open Android installer',
+      name: 'updateInstallerError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Downloaded package failed SHA-256 verification`
+  String get updateChecksumMismatch {
+    return Intl.message(
+      'Downloaded package failed SHA-256 verification',
+      name: 'updateChecksumMismatch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unable to verify update package checksum`
+  String get updateChecksumUnavailable {
+    return Intl.message(
+      'Unable to verify update package checksum',
+      name: 'updateChecksumUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No compatible Android package was found for this device`
+  String get updateNoCompatiblePackage {
+    return Intl.message(
+      'No compatible Android package was found for this device',
+      name: 'updateNoCompatiblePackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update failed`
+  String get updateFailed {
+    return Intl.message(
+      'Update failed',
+      name: 'updateFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Unknown`
   String get unknown {
     return Intl.message('Unknown', name: 'unknown', desc: '', args: []);
@@ -3274,30 +3384,30 @@ class AppLocalizations {
     );
   }
 
-  /// `This app uses Firebase Crashlytics to collect crash information to improve app stability.\nThe collected data includes device information and crash details, but does not contain personal sensitive data.\nYou can disable this feature in settings.`
+  /// `This app can collect crash information to improve app stability.\nCollected data may include device information and crash details, but does not contain personal sensitive data.\nYou can disable this feature in settings.`
   String get dataCollectionContent {
     return Intl.message(
-      'This app uses Firebase Crashlytics to collect crash information to improve app stability.\nThe collected data includes device information and crash details, but does not contain personal sensitive data.\nYou can disable this feature in settings.',
+      'This app can collect crash information to improve app stability.\nCollected data may include device information and crash details, but does not contain personal sensitive data.\nYou can disable this feature in settings.',
       name: 'dataCollectionContent',
       desc: '',
       args: [],
     );
   }
 
-  /// `Crash Analysis`
+  /// `Crash Reports`
   String get crashlytics {
     return Intl.message(
-      'Crash Analysis',
+      'Crash Reports',
       name: 'crashlytics',
       desc: '',
       args: [],
     );
   }
 
-  /// `When enabled, automatically uploads crash logs without sensitive information when the app crashes`
+  /// `When enabled, automatically uploads crash reports without sensitive information when the app crashes`
   String get crashlyticsTip {
     return Intl.message(
-      'When enabled, automatically uploads crash logs without sensitive information when the app crashes',
+      'When enabled, automatically uploads crash reports without sensitive information when the app crashes',
       name: 'crashlyticsTip',
       desc: '',
       args: [],

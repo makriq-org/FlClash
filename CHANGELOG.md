@@ -1,3 +1,25 @@
+## v0.8.96
+
+### Production Identity Cleanup
+
+- Fix Android native `JNI` bindings so the renamed `com.makriq.flclash` package works end-to-end at runtime.
+- Remove the last old vendor metadata from the Windows release manifest and publish desktop binaries as `FlClash`.
+- Drop unused Firebase entries from the Android version catalog after removing Google Services integration from the product line.
+
+## v0.8.95
+
+### Product Identity And Release Independence
+
+- Move Android and desktop bundle identifiers to the independent `makriq` namespace.
+- Remove upstream project links from the app UI, packaging metadata, and release helpers.
+- Update Windows, Linux, and macOS packaging metadata so releases are published as a standalone product line.
+
+### Android Release Reliability
+
+- Remove Firebase / Google Services coupling from Android builds so package renaming does not block stable releases.
+- Keep Android signing-based production releases while dropping the old `google-services.json` dependency.
+- Switch remaining Git-hosted upstream dependencies to neutral `pub.dev` packages where available.
+
 ## v0.8.94
 
 ### Android Routing And Security Follow-Up

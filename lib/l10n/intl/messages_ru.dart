@@ -248,9 +248,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "coreStatus": MessageLookupByLibrary.simpleMessage("Основной статус"),
     "country": MessageLookupByLibrary.simpleMessage("Страна"),
     "crashTest": MessageLookupByLibrary.simpleMessage("Тест на сбои"),
-    "crashlytics": MessageLookupByLibrary.simpleMessage("Анализ сбоев"),
+    "crashlytics": MessageLookupByLibrary.simpleMessage("Отчеты о сбоях"),
     "crashlyticsTip": MessageLookupByLibrary.simpleMessage(
-      "При включении автоматически загружает журналы сбоев без конфиденциальной информации, когда приложение выходит из строя",
+      "При включении приложение автоматически отправляет отчеты о сбоях без конфиденциальной информации",
     ),
     "create": MessageLookupByLibrary.simpleMessage("Создать"),
     "creationTime": MessageLookupByLibrary.simpleMessage("Время создания"),
@@ -258,7 +258,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dark": MessageLookupByLibrary.simpleMessage("Темный"),
     "dashboard": MessageLookupByLibrary.simpleMessage("Панель управления"),
     "dataCollectionContent": MessageLookupByLibrary.simpleMessage(
-      "Это приложение использует Firebase Crashlytics для сбора информации о сбоях nhằm улучшения стабильности приложения.\nСобираемые данные включают информацию об устройстве и подробности о сбоях, но не содержат персональных конфиденциальных данных.\nВы можете отключить эту функцию в настройках.",
+      "Это приложение может собирать информацию о сбоях для повышения стабильности.\nСобираемые данные могут включать сведения об устройстве и подробности сбоя, но не содержат персональных конфиденциальных данных.\nВы можете отключить эту функцию в настройках.",
     ),
     "dataCollectionTip": MessageLookupByLibrary.simpleMessage(
       "Уведомление о сборе данных",
@@ -404,6 +404,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "global": MessageLookupByLibrary.simpleMessage("Глобальный"),
     "go": MessageLookupByLibrary.simpleMessage("Перейти"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "Скачать и установить",
+    ),
     "goDownload": MessageLookupByLibrary.simpleMessage("Перейти к загрузке"),
     "goToConfigureScript": MessageLookupByLibrary.simpleMessage(
       "Перейти к настройке скрипта",
@@ -877,6 +880,36 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "unnamed": MessageLookupByLibrary.simpleMessage("Без имени"),
     "update": MessageLookupByLibrary.simpleMessage("Обновить"),
+    "updateChecksumMismatch": MessageLookupByLibrary.simpleMessage(
+      "Загруженный пакет не прошел проверку SHA-256",
+    ),
+    "updateChecksumUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Не удалось проверить контрольную сумму пакета обновления",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "Скачивание обновления",
+    ),
+    "updateFailed": MessageLookupByLibrary.simpleMessage(
+      "Обновление не удалось",
+    ),
+    "updateInstallerError": MessageLookupByLibrary.simpleMessage(
+      "Не удалось открыть установщик Android",
+    ),
+    "updateInstallerOpened": MessageLookupByLibrary.simpleMessage(
+      "Установщик открыт. Подтвердите обновление в Android.",
+    ),
+    "updateNoCompatiblePackage": MessageLookupByLibrary.simpleMessage(
+      "Для этого устройства не найден совместимый Android-пакет",
+    ),
+    "updateOpeningInstaller": MessageLookupByLibrary.simpleMessage(
+      "Открытие установщика",
+    ),
+    "updatePreparing": MessageLookupByLibrary.simpleMessage(
+      "Подготовка обновления",
+    ),
+    "updateVerifying": MessageLookupByLibrary.simpleMessage(
+      "Проверка пакета",
+    ),
     "upload": MessageLookupByLibrary.simpleMessage("Загрузка"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage(

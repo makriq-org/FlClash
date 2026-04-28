@@ -243,9 +243,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "coreStatus": MessageLookupByLibrary.simpleMessage("Core status"),
     "country": MessageLookupByLibrary.simpleMessage("Country"),
     "crashTest": MessageLookupByLibrary.simpleMessage("Crash test"),
-    "crashlytics": MessageLookupByLibrary.simpleMessage("Crash Analysis"),
+    "crashlytics": MessageLookupByLibrary.simpleMessage("Crash Reports"),
     "crashlyticsTip": MessageLookupByLibrary.simpleMessage(
-      "When enabled, automatically uploads crash logs without sensitive information when the app crashes",
+      "When enabled, automatically uploads crash reports without sensitive information when the app crashes",
     ),
     "create": MessageLookupByLibrary.simpleMessage("Create"),
     "creationTime": MessageLookupByLibrary.simpleMessage("Creation time"),
@@ -253,7 +253,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dark": MessageLookupByLibrary.simpleMessage("Dark"),
     "dashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
     "dataCollectionContent": MessageLookupByLibrary.simpleMessage(
-      "This app uses Firebase Crashlytics to collect crash information to improve app stability.\nThe collected data includes device information and crash details, but does not contain personal sensitive data.\nYou can disable this feature in settings.",
+      "This app can collect crash information to improve app stability.\nCollected data may include device information and crash details, but does not contain personal sensitive data.\nYou can disable this feature in settings.",
     ),
     "dataCollectionTip": MessageLookupByLibrary.simpleMessage(
       "Data Collection Notice",
@@ -389,6 +389,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "global": MessageLookupByLibrary.simpleMessage("Global"),
     "go": MessageLookupByLibrary.simpleMessage("Go"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "Download and install",
+    ),
     "goDownload": MessageLookupByLibrary.simpleMessage("Go to download"),
     "goToConfigureScript": MessageLookupByLibrary.simpleMessage(
       "Go to configure script",
@@ -828,6 +831,34 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "unnamed": MessageLookupByLibrary.simpleMessage("Unnamed"),
     "update": MessageLookupByLibrary.simpleMessage("Update"),
+    "updateChecksumMismatch": MessageLookupByLibrary.simpleMessage(
+      "Downloaded package failed SHA-256 verification",
+    ),
+    "updateChecksumUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Unable to verify update package checksum",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "Downloading update",
+    ),
+    "updateFailed": MessageLookupByLibrary.simpleMessage("Update failed"),
+    "updateInstallerError": MessageLookupByLibrary.simpleMessage(
+      "Unable to open Android installer",
+    ),
+    "updateInstallerOpened": MessageLookupByLibrary.simpleMessage(
+      "Installer opened. Confirm the update in Android.",
+    ),
+    "updateNoCompatiblePackage": MessageLookupByLibrary.simpleMessage(
+      "No compatible Android package was found for this device",
+    ),
+    "updateOpeningInstaller": MessageLookupByLibrary.simpleMessage(
+      "Opening installer",
+    ),
+    "updatePreparing": MessageLookupByLibrary.simpleMessage(
+      "Preparing update",
+    ),
+    "updateVerifying": MessageLookupByLibrary.simpleMessage(
+      "Verifying package",
+    ),
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage(

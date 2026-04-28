@@ -164,9 +164,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "coreStatus": MessageLookupByLibrary.simpleMessage("核心状态"),
     "country": MessageLookupByLibrary.simpleMessage("区域"),
     "crashTest": MessageLookupByLibrary.simpleMessage("崩溃测试"),
-    "crashlytics": MessageLookupByLibrary.simpleMessage("崩溃分析"),
+    "crashlytics": MessageLookupByLibrary.simpleMessage("崩溃报告"),
     "crashlyticsTip": MessageLookupByLibrary.simpleMessage(
-      "开启后，应用崩溃时自动上传不包含敏感信息的崩溃日志",
+      "开启后，应用崩溃时会自动上传不包含敏感信息的崩溃报告",
     ),
     "create": MessageLookupByLibrary.simpleMessage("创建"),
     "creationTime": MessageLookupByLibrary.simpleMessage("创建时间"),
@@ -174,7 +174,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dark": MessageLookupByLibrary.simpleMessage("深色"),
     "dashboard": MessageLookupByLibrary.simpleMessage("仪表盘"),
     "dataCollectionContent": MessageLookupByLibrary.simpleMessage(
-      "本应用使用 Firebase Crashlytics 收集崩溃信息以改进应用稳定性。\n收集的数据包括设备信息和崩溃详情，不包含个人敏感数据。\n您可以在设置中关闭此功能。",
+      "本应用可能会收集崩溃信息以提升稳定性。\n收集的数据可能包括设备信息和崩溃详情，但不包含个人敏感数据。\n您可以在设置中关闭此功能。",
     ),
     "dataCollectionTip": MessageLookupByLibrary.simpleMessage("数据收集说明"),
     "days": MessageLookupByLibrary.simpleMessage("天"),
@@ -262,6 +262,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "getOriginRules": MessageLookupByLibrary.simpleMessage("获取原始规则"),
     "global": MessageLookupByLibrary.simpleMessage("全局"),
     "go": MessageLookupByLibrary.simpleMessage("前往"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage("下载并安装"),
     "goDownload": MessageLookupByLibrary.simpleMessage("前往下载"),
     "goToConfigureScript": MessageLookupByLibrary.simpleMessage("前往配置脚本"),
     "hasCacheChange": MessageLookupByLibrary.simpleMessage("是否缓存修改"),
@@ -565,6 +566,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "unknownNetworkError": MessageLookupByLibrary.simpleMessage("未知网络错误"),
     "unnamed": MessageLookupByLibrary.simpleMessage("未命名"),
     "update": MessageLookupByLibrary.simpleMessage("更新"),
+    "updateChecksumMismatch": MessageLookupByLibrary.simpleMessage(
+      "下载的安装包未通过 SHA-256 校验",
+    ),
+    "updateChecksumUnavailable": MessageLookupByLibrary.simpleMessage(
+      "无法校验更新安装包的校验和",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage("正在下载更新"),
+    "updateFailed": MessageLookupByLibrary.simpleMessage("更新失败"),
+    "updateInstallerError": MessageLookupByLibrary.simpleMessage(
+      "无法打开 Android 安装器",
+    ),
+    "updateInstallerOpened": MessageLookupByLibrary.simpleMessage(
+      "安装器已打开，请在 Android 中确认更新。",
+    ),
+    "updateNoCompatiblePackage": MessageLookupByLibrary.simpleMessage(
+      "未找到适用于此设备的 Android 安装包",
+    ),
+    "updateOpeningInstaller": MessageLookupByLibrary.simpleMessage(
+      "正在打开安装器",
+    ),
+    "updatePreparing": MessageLookupByLibrary.simpleMessage("正在准备更新"),
+    "updateVerifying": MessageLookupByLibrary.simpleMessage("正在校验安装包"),
     "upload": MessageLookupByLibrary.simpleMessage("上传"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("通过URL获取配置文件"),
