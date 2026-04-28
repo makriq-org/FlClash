@@ -2,6 +2,39 @@
 
 Этот файл используется как источник release notes для GitHub Releases. Для нового релиза добавляйте секцию `## vX.Y.Z` в начало файла, а первые 3-5 bullets формулируйте как короткие пользовательские highlights.
 
+## v0.9.01-pre3
+
+### Android split tunneling: профиль стал источником истины
+
+- Profile-driven split tunneling теперь применяется до запуска Android `VpnService`, поэтому больше не нужно отдельно включать app access control вручную в настройках.
+- `tun.include-package` / `tun.exclude-package` теперь корректно попадают в Android runtime even при обычном ручном старте VPN, а не только после повторных применений профиля.
+- Экран контроля доступа больше не маскирует реальное состояние: когда split tunneling задан профилем, интерфейс показывает effective rules и не даёт случайно перетереть их ручными настройками.
+
+### Android split tunneling: удалённые списки пакетов
+
+- Добавлена поддержка `tun.include-package-url` и `tun.exclude-package-url` для списков приложений по `https://...`, включая GitHub Raw.
+- Поля `tun.include-package-file` / `tun.exclude-package-file` теперь принимают не только локальные пути, но и source descriptors с `url` / `path`, чтобы это вписывалось в общую file/url-логику клиента.
+- Удалённые списки кешируются в профиле и автоматически используются как fallback, если источник временно недоступен.
+
+### Верификация
+
+- Регрессионные тесты покрывают загрузку package list по URL, кеш-фолбек и descriptor-формат `url + path`.
+- GitHub Actions продолжают прогонять `flutter analyze`, Android regression tests и release build pipeline для тега `v0.9.01-pre3`.
+
+## v0.9.01-pre2
+
+### Android split tunneling: списки из файлов
+
+- Для Android split tunneling добавлена поддержка `tun.exclude-package-file` и `tun.include-package-file`.
+- Списки пакетов теперь можно хранить в отдельных текстовых или YAML-файлах вместо длинного перечисления внутри профиля.
+- Поддерживаются как абсолютные пути, так и относительные пути от каталога профилей FlClash.
+- Содержимое файлов автоматически разворачивается в итоговый профиль до запуска Android `VpnService`.
+
+### Надёжность и документация
+
+- Добавлены регрессионные тесты на чтение package list из файлов и на обработку отсутствующих файлов.
+- Документация split tunneling обновлена примерами для `*-package-file`.
+
 ## v0.9.01-pre1
 
 ### Android split tunneling через профиль

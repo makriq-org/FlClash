@@ -1,9 +1,252 @@
+import 'dart:io';
+
 import 'package:fl_clash/common/android_vpn_hardening.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'android profile split tunneling expands include-package-file relative to profiles path',
+    () async {
+      final profilesDir = await Directory.systemTemp.createTemp(
+        'flclash-include-file-',
+      );
+      addTearDown(() async {
+        await profilesDir.delete(recursive: true);
+      });
+      final packagesDir = Directory('${profilesDir.path}/lists');
+      await packagesDir.create(recursive: true);
+      final packagesFile = File('${packagesDir.path}/include.txt');
+      await packagesFile.writeAsString('''
+# comment
+org.telegram.messenger
+- com.android.chrome
+org.telegram.messenger
+''');
+
+      final normalized = await normalizeAndroidProfileAccessControlConfig(
+        {
+          'tun': {
+            'include-package': ['com.termux'],
+            'include-package-file': 'lists/include.txt',
+          },
+        },
+        isAndroid: true,
+        profilesPath: profilesDir.path,
+      );
+
+      expect(normalized['tun']['include-package'], [
+        'com.termux',
+        'org.telegram.messenger',
+        'com.android.chrome',
+      ]);
+      expect(
+        (normalized['tun'] as Map<String, dynamic>).containsKey(
+          'include-package-file',
+        ),
+        isFalse,
+      );
+
+      final resolved = resolveAndroidProfileAccessControlOverride(
+        normalized,
+        isAndroid: true,
+      );
+      expect(resolved?.mode, AccessControlMode.acceptSelected);
+      expect(resolved?.acceptList, [
+        'com.termux',
+        'org.telegram.messenger',
+        'com.android.chrome',
+      ]);
+    },
+  );
+
+  test(
+    'android profile split tunneling expands exclude-package-file from yaml list files',
+    () async {
+      final profilesDir = await Directory.systemTemp.createTemp(
+        'flclash-exclude-file-',
+      );
+      addTearDown(() async {
+        await profilesDir.delete(recursive: true);
+      });
+      final packagesFile = File('${profilesDir.path}/exclude.yaml');
+      await packagesFile.writeAsString('''
+- org.mozilla.firefox
+- com.android.vending
+''');
+
+      final normalized = await normalizeAndroidProfileAccessControlConfig(
+        {
+          'tun': {
+            'exclude-package-file': ['exclude.yaml'],
+          },
+        },
+        isAndroid: true,
+        profilesPath: profilesDir.path,
+      );
+
+      expect(normalized['tun']['exclude-package'], [
+        'org.mozilla.firefox',
+        'com.android.vending',
+      ]);
+      expect(
+        (normalized['tun'] as Map<String, dynamic>).containsKey(
+          'exclude-package-file',
+        ),
+        isFalse,
+      );
+
+      final resolved = resolveAndroidProfileAccessControlOverride(
+        normalized,
+        isAndroid: true,
+      );
+      expect(resolved?.mode, AccessControlMode.rejectSelected);
+      expect(resolved?.rejectList, [
+        'org.mozilla.firefox',
+        'com.android.vending',
+      ]);
+    },
+  );
+
+  test(
+    'android profile split tunneling downloads package lists from urls and caches them',
+    () async {
+      final profilesDir = await Directory.systemTemp.createTemp(
+        'flclash-url-file-',
+      );
+      addTearDown(() async {
+        await profilesDir.delete(recursive: true);
+      });
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(server.close);
+      server.listen((request) async {
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..write('org.telegram.messenger\ncom.android.chrome\n');
+        await request.response.close();
+      });
+
+      final normalized = await normalizeAndroidProfileAccessControlConfig(
+        {
+          'tun': {
+            'exclude-package-url':
+                'http://${server.address.address}:${server.port}/packages.txt',
+          },
+        },
+        isAndroid: true,
+        profilesPath: profilesDir.path,
+        profileId: 42,
+      );
+
+      expect(normalized['tun']['exclude-package'], [
+        'org.telegram.messenger',
+        'com.android.chrome',
+      ]);
+      final cacheDir = Directory('${profilesDir.path}/providers/42/packages');
+      expect(await cacheDir.exists(), isTrue);
+      expect(await cacheDir.list().isEmpty, isFalse);
+    },
+  );
+
+  test(
+    'android profile split tunneling falls back to cached package list urls',
+    () async {
+      final profilesDir = await Directory.systemTemp.createTemp(
+        'flclash-url-cache-',
+      );
+      addTearDown(() async {
+        await profilesDir.delete(recursive: true);
+      });
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final url =
+          'http://${server.address.address}:${server.port}/packages.txt';
+      server.listen((request) async {
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..write('org.mozilla.firefox\n');
+        await request.response.close();
+      });
+
+      await normalizeAndroidProfileAccessControlConfig(
+        {
+          'tun': {'include-package-url': url},
+        },
+        isAndroid: true,
+        profilesPath: profilesDir.path,
+        profileId: 7,
+      );
+      await server.close(force: true);
+
+      final normalized = await normalizeAndroidProfileAccessControlConfig(
+        {
+          'tun': {'include-package-url': url},
+        },
+        isAndroid: true,
+        profilesPath: profilesDir.path,
+        profileId: 7,
+      );
+
+      expect(normalized['tun']['include-package'], ['org.mozilla.firefox']);
+    },
+  );
+
+  test(
+    'android profile split tunneling accepts url descriptors with explicit cache paths',
+    () async {
+      final profilesDir = await Directory.systemTemp.createTemp(
+        'flclash-url-descriptor-',
+      );
+      addTearDown(() async {
+        await profilesDir.delete(recursive: true);
+      });
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(server.close);
+      server.listen((request) async {
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..write('- com.termux\n');
+        await request.response.close();
+      });
+
+      final normalized = await normalizeAndroidProfileAccessControlConfig(
+        {
+          'tun': {
+            'include-package-file': [
+              {
+                'url':
+                    'http://${server.address.address}:${server.port}/allow.yaml',
+                'path': 'lists/allow.yaml',
+              },
+            ],
+          },
+        },
+        isAndroid: true,
+        profilesPath: profilesDir.path,
+        profileId: 99,
+      );
+
+      expect(normalized['tun']['include-package'], ['com.termux']);
+      expect(File('${profilesDir.path}/lists/allow.yaml').existsSync(), isTrue);
+    },
+  );
+
+  test(
+    'android profile split tunneling rejects missing package list files',
+    () async {
+      await expectLater(
+        () => normalizeAndroidProfileAccessControlConfig(
+          {
+            'tun': {'exclude-package-file': 'missing.txt'},
+          },
+          isAndroid: true,
+          profilesPath: '/tmp/flclash-missing',
+        ),
+        throwsFormatException,
+      );
+    },
+  );
+
   test(
     'android profile split tunneling maps exclude-package to blacklist mode',
     () {

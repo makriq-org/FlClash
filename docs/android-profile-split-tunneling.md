@@ -8,8 +8,16 @@
   Эти приложения полностью обходят VPN, независимо от доменов, IP-адресов и правил маршрутизации.
 - `tun.include-package`
   Через VPN идут только перечисленные приложения. Все остальные Android-приложения обходят VPN.
+- `tun.exclude-package-file`
+  Один путь или список путей к файлам со списками пакетов для исключения из VPN.
+- `tun.include-package-file`
+  Один путь или список путей к файлам со списками пакетов для whitelist-режима.
+- `tun.exclude-package-url`
+  Одна ссылка или список ссылок на удалённые списки пакетов для исключения из VPN.
+- `tun.include-package-url`
+  Одна ссылка или список ссылок на удалённые списки пакетов для whitelist-режима.
 
-Эти поля читаются из итогового профиля перед запуском Android VPN и имеют приоритет над app-side списком приложений, настроенным вручную в интерфейсе.
+Эти поля читаются из итогового профиля перед запуском Android VPN и имеют приоритет над app-side списком приложений, настроенным вручную в интерфейсе. Если профиль задаёт split tunneling, отдельное ручное включение access control в настройках приложения больше не требуется.
 
 ## Что писать в профиле
 
@@ -45,10 +53,68 @@ tun:
 - через VPN идут только `com.termux` и `org.mozilla.firefox`;
 - остальные приложения обходят VPN.
 
+### Подключить список пакетов из файла
+
+```yaml
+tun:
+  enable: true
+  exclude-package-file:
+    - lists/android-bypass.txt
+    - /storage/emulated/0/FlClash/more-bypass.txt
+```
+
+Поддерживаются:
+
+- один путь строкой;
+- YAML-список путей;
+- descriptor-формат с `path` / `url`;
+- относительные пути от каталога профилей FlClash;
+- абсолютные пути.
+
+### Подключить список пакетов по ссылке
+
+```yaml
+tun:
+  enable: true
+  exclude-package-url:
+    - https://raw.githubusercontent.com/example/repo/main/android-bypass.txt
+```
+
+Или через descriptor, если нужен явный cache path:
+
+```yaml
+tun:
+  enable: true
+  include-package-file:
+    - url: https://raw.githubusercontent.com/example/repo/main/android-vpn.yaml
+      path: lists/android-vpn.yaml
+```
+
+Удалённые списки кешируются в каталоге профиля. Если источник временно недоступен, FlClash использует последнюю успешно скачанную копию.
+
+Файл со списком пакетов может быть в одном из двух форматов.
+
+Обычный текст:
+
+```text
+# один пакет на строку
+org.telegram.messenger
+com.android.chrome
+```
+
+Или YAML-список:
+
+```yaml
+- org.telegram.messenger
+- com.android.chrome
+```
+
+Содержимое файлов автоматически подмешивается в `tun.include-package` или `tun.exclude-package`, а сами поля `*-package-file` используются только клиентом FlClash.
+
 ## Ограничения и правила
 
-- Используй только одно из полей: `tun.include-package` или `tun.exclude-package`.
-- Если в профиле одновременно заданы оба поля, FlClash отклонит такой профиль как конфликтный.
+- Используй только один режим: либо `tun.include-package` / `tun.include-package-file` / `tun.include-package-url`, либо `tun.exclude-package` / `tun.exclude-package-file` / `tun.exclude-package-url`.
+- Если одновременно заданы include- и exclude-режимы, FlClash отклонит такой профиль как конфликтный.
 - Эти поля применяются только в Android VPN-режиме.
 - Это split tunneling по приложениям, а не по адресам: если приложение исключено из VPN, весь его трафик идет мимо VPN.
 
