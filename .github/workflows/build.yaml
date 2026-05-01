@@ -10,6 +10,7 @@ permissions:
 
 env:
   IS_STABLE: ${{ !contains(github.ref, '-') }}
+  HAS_KEYSTORE: ${{ secrets.KEYSTORE != '' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,7 +31,7 @@ jobs:
             --tag "${{ github.ref_name }}"
 
       - name: Настроить подпись Android
-        if: ${{ secrets.KEYSTORE != '' }}
+        if: env.HAS_KEYSTORE == 'true'
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE }}
           KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
