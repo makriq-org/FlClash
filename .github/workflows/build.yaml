@@ -1,4 +1,4 @@
-name: сборка-релиза
+name: android-релиз
 
 on:
   push:
@@ -11,71 +11,26 @@ permissions:
 env:
   IS_STABLE: ${{ !contains(github.ref, '-') }}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  release-notes-guard:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Получить код
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
 
       - name: Проверить release notes
         run: |
           python3 .github/scripts/validate_release_notes.py \
             --tag "${{ github.ref_name }}"
 
-  build:
-    needs: [ release-notes-guard ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - platform: android
-            os: ubuntu-latest
-          - platform: windows
-            os: Windows-2022
-            arch: amd64
-          - platform: linux
-            os: ubuntu-22.04
-            arch: amd64
-          - platform: macos
-            os: macos-15-intel
-            arch: amd64
-          - platform: macos
-            os: macos-latest
-            arch: arm64
-          #          - platform: windows
-          #            os: windows-11-arm
-          #            arch: arm64
-          - platform: linux
-            os: ubuntu-24.04-arm
-            arch: arm64
-
-    steps:
-      - name: Определить Android NDK
-        if: startsWith(matrix.platform,'android')
-        run: |
-          latest_ndk="$(find "${ANDROID_HOME}/ndk" -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)"
-          if [ -z "${latest_ndk}" ]; then
-            echo "ANDROID_NDK не найден в ${ANDROID_HOME}/ndk" >&2
-            exit 1
-          fi
-          echo "ANDROID_NDK=${latest_ndk}" >> "${GITHUB_ENV}"
-
-      - name: Настроить Rust
-        if: startsWith(matrix.os, 'windows-11-arm')
-        run: |
-          Invoke-WebRequest -Uri "https://win.rustup.rs/aarch64" -OutFile rustup-init.exe
-          .\rustup-init.exe -y --default-toolchain stable
-          $cargoPath = "$env:USERPROFILE\.cargo\bin"
-          Add-Content $env:GITHUB_PATH $cargoPath
-
-      - name: Получить код
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
       - name: Настроить подпись Android
-        if: startsWith(matrix.platform,'android') && env.KEYSTORE_B64 != ''
+        if: ${{ secrets.KEYSTORE != '' }}
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE }}
           KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
@@ -83,12 +38,14 @@ jobs:
           KEY_PASSWORD_VALUE: ${{ secrets.KEY_PASSWORD }}
         run: |
           echo "${KEYSTORE_B64}" | base64 --decode > android/app/keystore.jks
-          echo "keyAlias=${KEY_ALIAS_VALUE}" >> android/local.properties
-          echo "storePassword=${STORE_PASSWORD_VALUE}" >> android/local.properties
-          echo "keyPassword=${KEY_PASSWORD_VALUE}" >> android/local.properties
+          {
+            echo "keyAlias=${KEY_ALIAS_VALUE}"
+            echo "storePassword=${STORE_PASSWORD_VALUE}"
+            echo "keyPassword=${KEY_PASSWORD_VALUE}"
+          } >> android/local.properties
 
       - name: Проверить подпись Android для стабильного релиза
-        if: startsWith(matrix.platform,'android') && env.IS_STABLE == 'true'
+        if: env.IS_STABLE == 'true'
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE }}
           KEY_ALIAS_VALUE: ${{ secrets.KEY_ALIAS }}
@@ -101,14 +58,13 @@ jobs:
           fi
 
       - name: Настроить Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.24.0'
-          cache-dependency-path: |
-            core/go.sum
+          cache-dependency-path: core/go.sum
 
       - name: Кэшировать Go build cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/go-build
           key: ${{ runner.os }}-go-build-${{ hashFiles('core/go.sum') }}
@@ -116,27 +72,28 @@ jobs:
             ${{ runner.os }}-go-build-
 
       - name: Настроить Java для Android/Gradle
-        if: startsWith(matrix.platform,'android')
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
       - name: Настроить Flutter
-        if: ${{ !(startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')) }}
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: 3.35.7
           cache: true
-      - name: Настроить Flutter для альтернативной среды
-        if: startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')
-        uses: subosito/flutter-action@v2
-        with:
-          channel: master
-          flutter-version: 3.35.7
-          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Определить Android NDK
+        run: |
+          latest_ndk="$(find "${ANDROID_HOME}/ndk" -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)"
+          if [ -z "${latest_ndk}" ]; then
+            echo "ANDROID_NDK не найден в ${ANDROID_HOME}/ndk" >&2
+            exit 1
+          fi
+          echo "ANDROID_NDK=${latest_ndk}" >> "${GITHUB_ENV}"
 
       - name: Получить зависимости Flutter
         run: |
@@ -147,41 +104,37 @@ jobs:
         run: flutter analyze lib test setup.dart
 
       - name: Запустить Android-регрессионные тесты
-        if: startsWith(matrix.platform,'android')
         run: flutter test test/common
 
-      - name: Подготовить сборку
-        run: dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
+      - name: Собрать Android-артефакты
+        run: dart setup.dart android ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
 
-      - name: Загрузить артефакты
-        uses: actions/upload-artifact@v4
+      - name: Загрузить Android-артефакты
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: artifact-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) }}
+          name: android-dist
           path: ./dist
           overwrite: true
 
-  upload:
+  release:
+    needs: build
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: [ build ]
-    runs-on: ubuntu-latest
     steps:
       - name: Получить код
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
-      - name: Скачать артефакты
-        uses: actions/download-artifact@v4
+      - name: Скачать Android-артефакты
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          path: ./dist/
-          pattern: artifact-*
-          merge-multiple: true
+          name: android-dist
+          path: ./dist
 
       - name: Сформировать release notes
         run: |
-          python3 .github/scripts/validate_release_notes.py \
-            --tag "${{ github.ref_name }}"
           python3 .github/scripts/build_release_notes.py \
             --tag "${{ github.ref_name }}" \
             --repo-url "${{ github.server_url }}/${{ github.repository }}" \
@@ -192,14 +145,14 @@ jobs:
       - name: Сгенерировать sha256
         run: |
           cd ./dist
-          for file in $(find . -type f -not -name "*.sha256"); do
+          find . -type f -not -name '*.sha256' -print0 | while IFS= read -r -d '' file; do
             sha256sum "$file" > "${file}.sha256"
-          done  
+          done
 
       - name: Опубликовать релиз
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: FlClash ${{ github.ref_name }}
           prerelease: ${{ env.IS_STABLE != 'true' }}
           files: ./dist/*
-          body_path: './release.md'
+          body_path: ./release.md
