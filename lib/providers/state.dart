@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -12,6 +14,26 @@ import 'config.dart';
 import 'database.dart';
 
 part 'generated/state.g.dart';
+
+final dashboardProfileInfoProvider = FutureProvider<DashboardInfoData?>((
+  ref,
+) async {
+  final profileIdentity = ref.watch(
+    currentProfileProvider.select(
+      (state) => VM2(state?.id, state?.lastUpdateDate?.millisecondsSinceEpoch),
+    ),
+  );
+  final profileId = profileIdentity.a;
+  if (profileId == null) {
+    return null;
+  }
+  final profilePath = await appPath.getProfilePath(profileId.toString());
+  final file = File(profilePath);
+  if (!await file.exists()) {
+    return null;
+  }
+  return parseDashboardInfoFromProfileYaml(await file.readAsString());
+});
 
 @riverpod
 GroupsState currentGroupsState(Ref ref) {
