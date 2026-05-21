@@ -41,13 +41,12 @@ class DashboardInfoWidget extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final accentColor = _getAccentColor(context, dashboardInfo.level);
-    return SizedBox(
-      height: getWidgetHeight(2),
-      child: CommonCard(
-        onPressed: () {},
-        info: const Info(label: 'Info', iconData: Icons.campaign_outlined),
-        child: Padding(
-          padding: baseInfoEdgeInsets.copyWith(top: 8, bottom: 12),
+    return CommonCard(
+      onPressed: () {},
+      info: const Info(label: 'Info', iconData: Icons.campaign_outlined),
+      child: Padding(
+        padding: baseInfoEdgeInsets.copyWith(top: 8, bottom: 12),
+        child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -63,14 +62,19 @@ class DashboardInfoWidget extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          _getIcon(dashboardInfo.level),
-                          size: 18,
-                          color: accentColor,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Icon(
+                            _getIcon(dashboardInfo.level),
+                            size: 18,
+                            color: accentColor,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -78,8 +82,6 @@ class DashboardInfoWidget extends ConsumerWidget {
                             dashboardInfo.title.isNotEmpty
                                 ? dashboardInfo.title
                                 : 'User message',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: context.textTheme.titleSmall?.copyWith(
                               color: context.colorScheme.onSurface,
                             ),
@@ -107,15 +109,11 @@ class DashboardInfoWidget extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Expanded(
-                      child: Text(
-                        dashboardInfo.content,
-                        maxLines: 4,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.textTheme.bodyMedium?.copyWith(
-                          color: context.colorScheme.onSurfaceVariant,
-                          height: 1.35,
-                        ),
+                    Text(
+                      dashboardInfo.content,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.colorScheme.onSurfaceVariant,
+                        height: 1.35,
                       ),
                     ),
                   ],
