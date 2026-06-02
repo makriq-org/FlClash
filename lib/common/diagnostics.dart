@@ -80,7 +80,10 @@ class ProfileAppliedDiagnosticsReporter {
       globalState.packageInfo.version,
       globalState.packageInfo.buildNumber,
     ].where((item) => item.trim().isNotEmpty).join('+');
-    final profileUpdatedAt = profile.lastUpdateDate?.toUtc().toIso8601String();
+    final now = DateTime.now().toUtc();
+    final profileUpdatedAt =
+        profile.lastUpdateDate?.toUtc().toIso8601String() ??
+        now.toIso8601String();
     final signature = buildProfileAppliedDiagnosticsSignature(
       appVersion: appVersion,
       profileId: profile.id,
@@ -89,7 +92,6 @@ class ProfileAppliedDiagnosticsReporter {
       routeMode: routeMode,
       excludedPackages: excludedPackages,
     );
-    final now = DateTime.now().toUtc();
     final lastState = await preferences.getProfileAppliedDiagnosticsState();
     if (!shouldSendProfileAppliedDiagnostics(
       nextSignature: signature,
@@ -147,13 +149,16 @@ class ProfileAppliedDiagnosticsReporter {
         manufacturer,
         model,
       ].where((item) => item.isNotEmpty).join(' ').trim();
+      final fallbackDevice = info.device.trim();
       return _AndroidDeviceInfo(
         osVersion:
             'Android ${info.version.release} (SDK ${info.version.sdkInt})',
-        device: device.isEmpty ? info.device : device,
+        device: device.isEmpty
+            ? (fallbackDevice.isEmpty ? 'Android' : fallbackDevice)
+            : device,
       );
     } catch (_) {
-      return const _AndroidDeviceInfo(osVersion: 'Android', device: '');
+      return const _AndroidDeviceInfo(osVersion: 'Android', device: 'Android');
     }
   }
 }
