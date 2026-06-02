@@ -116,10 +116,6 @@ class ProfileAppliedDiagnosticsReporter {
       'app_list_permission': appListPermission,
       'excluded_packages': excludedPackages,
     };
-    await preferences.setProfileAppliedDiagnosticsState(
-      signature: signature,
-      attemptedAt: now,
-    );
     try {
       await request.dio
           .post(
@@ -132,6 +128,10 @@ class ProfileAppliedDiagnosticsReporter {
             ),
           )
           .timeout(const Duration(seconds: 10));
+      await preferences.setProfileAppliedDiagnosticsState(
+        signature: signature,
+        attemptedAt: now,
+      );
     } catch (error) {
       commonPrint.log(
         'profile applied diagnostics report failed: $error',
