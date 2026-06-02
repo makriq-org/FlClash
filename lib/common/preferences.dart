@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:fl_clash/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,6 +53,44 @@ class Preferences {
   Future<void> clearSkippedReleaseTag() async {
     final preferences = await sharedPreferencesCompleter.future;
     await preferences?.remove('skippedReleaseTag');
+  }
+
+  Future<String> getOrCreateDiagnosticsReportId() async {
+    final preferences = await sharedPreferencesCompleter.future;
+    final current = preferences?.getString('diagnosticsReportId');
+    if (current != null && current.isNotEmpty) {
+      return current;
+    }
+    final next = _uuidV4();
+    await preferences?.setString('diagnosticsReportId', next);
+    return next;
+  }
+
+  Future<ProfileAppliedDiagnosticsState>
+  getProfileAppliedDiagnosticsState() async {
+    final preferences = await sharedPreferencesCompleter.future;
+    final attemptedAt = preferences?.getString(
+      'profileAppliedDiagnosticsAttemptedAt',
+    );
+    return ProfileAppliedDiagnosticsState(
+      signature: preferences?.getString('profileAppliedDiagnosticsSignature'),
+      attemptedAt: attemptedAt == null ? null : DateTime.tryParse(attemptedAt),
+    );
+  }
+
+  Future<void> setProfileAppliedDiagnosticsState({
+    required String signature,
+    required DateTime attemptedAt,
+  }) async {
+    final preferences = await sharedPreferencesCompleter.future;
+    await preferences?.setString(
+      'profileAppliedDiagnosticsSignature',
+      signature,
+    );
+    await preferences?.setString(
+      'profileAppliedDiagnosticsAttemptedAt',
+      attemptedAt.toUtc().toIso8601String(),
+    );
   }
 
   Future<Map<String, Object?>?> getConfigMap() async {
@@ -107,3 +146,24 @@ class Preferences {
 }
 
 final preferences = Preferences();
+
+String _uuidV4() {
+  final random = Random();
+  final bytes = List.generate(16, (_) => random.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0F) | 0x40;
+  bytes[8] = (bytes[8] & 0x3F) | 0x80;
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}';
+}
+
+class ProfileAppliedDiagnosticsState {
+  const ProfileAppliedDiagnosticsState({
+    required this.signature,
+    required this.attemptedAt,
+  });
+
+  final String? signature;
+  final DateTime? attemptedAt;
+}

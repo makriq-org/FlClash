@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/enum/enum.dart';
+import 'package:fl_clash/common/diagnostics.dart';
 import 'package:fl_clash/plugins/app.dart';
 import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/providers.dart';
@@ -616,15 +617,22 @@ extension SetupControllerExt on AppController {
     if (!force && !await needSetup()) {
       return;
     }
+    var profileApplied = false;
     await loadingRun(
       () async {
-        await _setupConfig(preloadInvoke);
+        profileApplied = await _setupConfig(preloadInvoke);
+        if (!profileApplied) {
+          return;
+        }
         await updateGroups();
         await updateProviders();
       },
       silence: true,
       tag: !silence ? LoadingTag.proxies : null,
     );
+    if (profileApplied && system.isAndroid) {
+      unawaited(_reportProfileAppliedDiagnostics());
+    }
   }
 
   Future<Map<String, dynamic>> getProfile({
@@ -732,7 +740,7 @@ extension SetupControllerExt on AppController {
     return res;
   }
 
-  Future<void> _setupConfig([FutureOr<void> Function()? preloadInvoke]) async {
+  Future<bool> _setupConfig([FutureOr<void> Function()? preloadInvoke]) async {
     commonPrint.log('setup ===>');
     var profile = _ref.read(currentProfileProvider);
     final nextProfile = await profile?.checkAndUpdateAndCopy();
@@ -743,7 +751,7 @@ extension SetupControllerExt on AppController {
     final patchConfig = _ref.read(patchClashConfigProvider);
     final res = await _requestAdmin(patchConfig.tun.enable);
     if (res.isError) {
-      return;
+      return false;
     }
     final realTunEnable = _ref.read(realTunEnableProvider);
     final realPatchConfig = patchConfig.copyWith.tun(enable: realTunEnable);
@@ -788,6 +796,37 @@ extension SetupControllerExt on AppController {
       await service?.syncState(resolvedSharedState.needSyncSharedState);
     }
     addCheckIp();
+    return true;
+  }
+
+  Future<void> _reportProfileAppliedDiagnostics() async {
+    final profile = _ref.read(currentProfileProvider);
+    if (profile == null) {
+      return;
+    }
+    var appListPermission = _ref.read(packagesProvider).isNotEmpty;
+    if (!appListPermission) {
+      try {
+        appListPermission = (await getPackages()).isNotEmpty;
+      } catch (error) {
+        commonPrint.log(
+          'profile applied diagnostics package access failed: $error',
+          logLevel: LogLevel.warning,
+        );
+      }
+    }
+    final routeMode = _ref.read(
+      networkSettingProvider.select((state) => state.routeMode),
+    );
+    final accessControlProps =
+        globalState.lastAndroidProfileAccessControlOverride ??
+        _ref.read(vpnSettingProvider).accessControlProps;
+    await profileAppliedDiagnosticsReporter.report(
+      profile: profile,
+      routeMode: routeMode,
+      accessControlProps: accessControlProps,
+      appListPermission: appListPermission,
+    );
   }
 }
 
