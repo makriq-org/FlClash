@@ -871,3 +871,10 @@
 - The embedded core reports `v1.19.30-flclash` instead of the stale source default `1.10.0`.
 - The top-level Go dependency graph was synchronized with Mihomo `v1.19.30` using `go mod tidy`.
 - Local validation completed with the full Mihomo `go test ./...` suite; Android release validation remains gated by GitHub Actions.
+
+### Mihomo v1.19.31 Upgrade And FlClash v0.9.24 (2026-09-20)
+
+- The FlClash-compatible core is based on upstream Mihomo `v1.19.31` and is maintained in `makriq-org/mihomo` on branch `FlClash`.
+- The embedded core reports `v1.19.31-flclash` and preserves the existing FlClash integration patch.
+- The top-level Go dependency graph was synchronized with Mihomo `v1.19.31` using `go mod tidy`.
+- Local validation completed with the full Mihomo `go test ./...` suite; the tagged Android release is validated and built by GitHub Actions.
