@@ -38,6 +38,7 @@ final defaultThemeProps = ThemeProps(primaryColor: defaultPrimaryColor);
 
 const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.networkSpeed,
+  DashboardWidget.dashboardInfo,
   DashboardWidget.systemProxyButton,
   DashboardWidget.tunButton,
   DashboardWidget.outboundMode,
@@ -46,14 +47,28 @@ const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.intranetIp,
 ];
 
+List<DashboardWidget> ensureDashboardWidgets(List<DashboardWidget> widgets) {
+  final nextWidgets = List<DashboardWidget>.from(widgets);
+  if (!nextWidgets.contains(DashboardWidget.dashboardInfo)) {
+    final insertIndex = nextWidgets.indexOf(DashboardWidget.networkSpeed);
+    nextWidgets.insert(
+      insertIndex == -1 ? 0 : insertIndex + 1,
+      DashboardWidget.dashboardInfo,
+    );
+  }
+  return nextWidgets;
+}
+
 List<DashboardWidget> dashboardWidgetsSafeFormJson(
   List<dynamic>? dashboardWidgets,
 ) {
   try {
-    return dashboardWidgets
-            ?.map((e) => $enumDecode(_$DashboardWidgetEnumMap, e))
-            .toList() ??
-        defaultDashboardWidgets;
+    return ensureDashboardWidgets(
+      dashboardWidgets
+              ?.map((e) => $enumDecode(_$DashboardWidgetEnumMap, e))
+              .toList() ??
+          defaultDashboardWidgets,
+    );
   } catch (_) {
     return defaultDashboardWidgets;
   }

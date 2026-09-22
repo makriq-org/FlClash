@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -12,6 +14,55 @@ import 'config.dart';
 import 'database.dart';
 
 part 'generated/state.g.dart';
+
+final dashboardProfileInfoProvider = FutureProvider<DashboardInfoData?>((
+  ref,
+) async {
+  final profileId = ref.watch(
+    currentProfileProvider.select((state) => state?.id),
+  );
+  if (profileId == null) {
+    return null;
+  }
+  ref.watch(dashboardProfileInfoFileStampProvider(profileId));
+  final profilePath = await appPath.getProfilePath(profileId.toString());
+  final file = File(profilePath);
+  if (!await file.exists()) {
+    return null;
+  }
+  return parseDashboardInfoFromProfileYaml(await file.readAsString());
+});
+
+final dashboardProfileInfoFileStampProvider = StreamProvider.autoDispose
+    .family<int?, int>((ref, profileId) async* {
+      final profilePath = await appPath.getProfilePath(profileId.toString());
+      final file = File(profilePath);
+      int? previousStamp;
+      var disposed = false;
+      ref.onDispose(() {
+        disposed = true;
+      });
+
+      Future<int?> readStamp() async {
+        if (!await file.exists()) {
+          return null;
+        }
+        final stat = await file.stat();
+        return stat.modified.millisecondsSinceEpoch;
+      }
+
+      previousStamp = await readStamp();
+      yield previousStamp;
+
+      while (!disposed) {
+        await Future<void>.delayed(const Duration(seconds: 2));
+        final nextStamp = await readStamp();
+        if (nextStamp != previousStamp) {
+          previousStamp = nextStamp;
+          yield nextStamp;
+        }
+      }
+    });
 
 @riverpod
 GroupsState currentGroupsState(Ref ref) {

@@ -4,6 +4,7 @@ import 'package:defer_pointer/defer_pointer.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/controller.dart';
 import 'package:fl_clash/enum/enum.dart';
+import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
@@ -213,9 +214,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     }
     if (mounted) {
       await currentState.isTransformCompleter;
-      final dashboardWidgets = currentState.children
-          .map((item) => DashboardWidget.getDashboardWidget(item))
-          .toList();
+      final dashboardWidgets = ensureDashboardWidgets(
+        currentState.children
+            .map((item) => DashboardWidget.getDashboardWidget(item))
+            .toList(),
+      );
       ref
           .read(appSettingProvider.notifier)
           .update(
@@ -227,12 +230,16 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardStateProvider);
+    final hasDashboardInfo =
+        ref.watch(dashboardProfileInfoProvider).asData?.value != null;
     final columns = max(4 * ((dashboardState.contentWidth / 280).ceil()), 8);
     final spacing = 14.mAp;
     final children = [
       ...dashboardState.dashboardWidgets
           .where(
-            (item) => item.platforms.contains(SupportPlatform.currentPlatform),
+            (item) =>
+                item.platforms.contains(SupportPlatform.currentPlatform) &&
+                (item != DashboardWidget.dashboardInfo || hasDashboardInfo),
           )
           .map((item) => item.widget),
     ];
@@ -240,7 +247,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       _addedWidgetsNotifier.value = DashboardWidget.values
           .where(
             (item) =>
-                !children.contains(item.widget) &&
+                !dashboardState.dashboardWidgets.contains(item) &&
                 item.platforms.contains(SupportPlatform.currentPlatform),
           )
           .map((item) => item.widget)
